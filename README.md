@@ -1,3 +1,18 @@
+Sando 
+サンド 
+
+is an interesting layer system 
+for handling side effects.
+
+
+converted from 
+Software Design For Flexibility 
+
+
+# install
+
+bun install sando-layer
+
 # layer-system
 
 To install dependencies:
