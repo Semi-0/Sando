@@ -1,5 +1,4 @@
-# Sando 
-## サンド 
+# Sando  サンド 
 
 is an interesting layer system 
 for handling side effects.
