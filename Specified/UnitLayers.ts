@@ -24,3 +24,4 @@ export class UnitLayer extends Layer{
     }
 }
 
+export const the_unit_layer = new UnitLayer(undefined)

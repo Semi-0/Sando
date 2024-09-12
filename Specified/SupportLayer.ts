@@ -1,32 +1,53 @@
-import { BetterSet, construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
+import { add_item, type BetterSet, construct_better_set, is_better_set, merge_set } from "generic-handler/built_in_generics/generic_better_set"
 import { add } from "generic-handler/built_in_generics/generic_arithmetic"
-import { Layer } from "../Basic/Layer"
+import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer"
 import { default_merge_procedure } from "../Basic/LayerGenerics"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
-import { add_layer, is_layered_object, LayeredObject } from "../Basic/LayeredObject"
-import { guard } from "generic-handler/built_in_generics/other_generic_helper"
+import {  construct_layer_ui, is_layered_object, type LayeredObject } from "../Basic/LayeredObject"
+import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure"
+import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
-export class SupportLayer<T> extends Layer{
+export const support_layer = make_annotation_layer("support", (get_name: () => string, 
+                                                              has_value: (object: any) => boolean,
+                                                              get_value: (object: any) => any): Layer => {
 
-    constructor(set: BetterSet<T>){
-        super("support", set)
+    function get_default_value(): any{
+        return construct_better_set([], (a: string) => to_string(a))
+    } 
+
+    function get_procedure(name: string, arity: number): any | undefined{
+        return default_merge_procedure((a: BetterSet<string>, b: BetterSet<string>) => {
+            return merge_set(a, b)
+        }, construct_better_set([], (a: string) => to_string(a)))
     }
 
-    override get_procedure(name: string, arity: number) {
-        return default_merge_procedure(add, construct_better_set([], (a: T) => to_string(a)))
+    function summarize_self(): string[]{
+        return ["support"]
     }
-}
 
-export function support_by(base: any, support: string){
-    return add_layer(base, new SupportLayer(construct_better_set([], (a: string) => to_string(a))))
-}
+    return {
+        identifier: "layer",
+        get_name,
+        has_value,
+        get_value,
+        get_default_value,
+        get_procedure,
+        summarize_self
+    }
+})
 
 export function has_support_layer(a: LayeredObject): boolean{
-    return a.has_layer("support")
+    return  support_layer.has_value(a)
 }
 
-export function get_support_layer_value(a: LayeredObject): BetterSet<string>{
-    guard(has_support_layer(a), () => {throw new Error("No support layer")})
-    return a.get_layer_value("support")
+export const get_support_layer_value = layer_accessor(support_layer)
+
+export function construct_support_value(new_value: any): BetterSet<string>{
+    return construct_better_set([new_value], (a: string) => to_string(a))
 }
 
+export const support_by = construct_layer_ui(support_layer, construct_support_value, 
+                                            (new_value: any, old_values: any) => {
+                                                    return merge_set(construct_support_value(new_value), old_values)
+                                            })
