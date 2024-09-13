@@ -4,6 +4,8 @@ import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
+import { define_layered_procedure_handler } from "../Basic/LayeredProcedure";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 export interface ErrorPair{
@@ -35,9 +37,13 @@ export function make_error_pair(error: string, value: any): ErrorPair{
     return error_pair
 }
 
+
+
 export const is_error_pair = register_predicate("is_error_pair", (a: any): a is ErrorPair => {
     return a.identifier === "error_pair"
 })
+
+
 
 export const is_error_pair_list = register_predicate("is_error_pair_list", (a: any): a is ErrorPair[] => {
     return is_array(a) && a.every(is_error_pair)
@@ -74,6 +80,10 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
         return ["error"]
     }
 
+    function describe(object: LayeredObject): string[]{
+        return get_value(object)
+    }
+
     return {
         identifier: "layer",
         get_name,
@@ -103,9 +113,3 @@ export const mark_error = construct_layer_ui(
     }
 )
 
-// export const the_error_layer = new ErrorLayer([])
-
-// export const annotate_error = construct_layer_interface(the_error_layer, (new_value: any, old_values: any[]) => {
-//     guard(is_array(old_values), throw_error("annotate_error", "Old values are not an array", "old_values: " + to_string(old_values)))
-//     return [...old_values, new_value]
-// })

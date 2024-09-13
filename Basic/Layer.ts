@@ -47,6 +47,7 @@ export function base_layer(): Layer{
         throw new Error("base_layer: get_procedure not implemented")
     }
 
+
     return {
         identifier: "layer",
         get_name,
@@ -54,7 +55,8 @@ export function base_layer(): Layer{
         get_value,
         summarize_self,
         get_default_value,
-        get_procedure
+        get_procedure,
+
     }
 }
 

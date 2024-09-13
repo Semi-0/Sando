@@ -151,7 +151,7 @@ describe("test time layer operations", () => {
 // ... existing imports ...
 import { has_id_layer, get_id_layer_value, mark_id } from "../Specified/IdLayer"
 import { v4 as uuidv4 } from 'uuid';
-import type { LayeredObject } from "../Basic/LayeredObject"
+import { layered_object, type LayeredObject } from "../Basic/LayeredObject"
 
 // ... existing test suites ...
 
@@ -252,6 +252,7 @@ describe("test log layer operations", () => {
     })
 })
 
+import {beforeEach} from "bun:test"
 
 import {
     is_procedure_with_sticky_note,
@@ -284,3 +285,75 @@ import {
   
 
   });
+
+
+  // ... existing imports and test suites ...
+describe('test multiple layers', () => {
+  let obj: any;
+  let obj2: any;
+  let merge_proc: any;
+
+  beforeEach(() => {
+    obj = pipe(
+      1,
+      (x) => support_by(x, "support"),
+      (x) => mark_error(x, "error"),
+      (x) => annotate_time(x, 1000),
+      (x) => mark_id(x),
+      (x) => add_log(x, "log")
+    );
+
+    obj2 = pipe(
+      2,
+      (x) => support_by(x, "support2"),
+      (x) => mark_error(x, "error2"),
+      (x) => annotate_time(x, 2000),
+      (x) => mark_id(x),
+      (x) => add_log(x, "log2")
+    );
+
+    merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b);
+  });
+
+  it('should handle base layer correctly', () => {
+    console.log(obj.describe_self())
+    expect(get_base_value(obj)).toBe(1);
+    expect(get_base_value(obj2)).toBe(2);
+  });
+
+  it('should handle support layer correctly', () => {
+    expect(to_array(get_support_layer_value(obj))).toEqual(["support"]);
+    expect(to_array(get_support_layer_value(obj2))).toEqual(["support2"]);
+  });
+
+  it('should handle error layer correctly', () => {
+    expect(get_error_layer_value(obj)[0].get_error()).toBe("error");
+    expect(get_error_layer_value(obj2)[0].get_error()).toBe("error2");
+  });
+
+  it('should handle time layer correctly', () => {
+    expect(get_time_layer_value(obj).timestamp).toBe(1000);
+    expect(get_time_layer_value(obj2).timestamp).toBe(2000);
+  });
+
+  it('should handle id layer correctly', () => {
+    expect(get_length(get_id_layer_value(obj))).toBe(1);
+    expect(get_length(get_id_layer_value(obj2))).toBe(1);
+  });
+
+  it('should handle log layer correctly', () => {
+    expect(get_log_layer_value(obj)[0].get_message()).toBe("log");
+    expect(get_log_layer_value(obj2)[0].get_message()).toBe("log2");
+  });
+
+  it('should merge layers correctly', () => {
+    const result = merge_proc(obj, obj2);
+
+    expect(get_base_value(result)).toBe(3);
+    expect(to_array(get_support_layer_value(result)).sort()).toEqual(["support", "support2"]);
+    expect(get_error_layer_value(result).map((e: any) => e.get_error())).toEqual(["error", "error2"]);
+    expect(get_time_layer_value(result).timestamp).toBe(2000);
+    expect(get_length(get_id_layer_value(result))).toBe(2);
+    expect(get_log_layer_value(result).map((l: any) => l.get_message())).toEqual(["log", "log2"]);
+  });
+});

@@ -80,7 +80,7 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     function update_layer(layer: Layer, value: any): LayeredObject{
         guard(!has_layer(layer), () => console.log("update_layer: layer already exists, layer: " + summarize_self()))
 
-        return construct_layered_object(value, add_item(alist, [layer, value]))
+        return construct_layered_object(base_value, add_item(alist, [layer, value]))
     }
 
 
@@ -100,7 +100,7 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     } 
 
     function describe_self(): string[]{
-        return map_to_array(alist, (v: [Layer, any]) => v[0].get_name() + " layer: " + v[1] + "\n")
+        return map_to_array(alist, (v: [Layer, any]) => v[0].get_name() + " layer: " + inspect(v[1], {depth: 100}) + "\n")
     }
 
     return {
@@ -120,11 +120,11 @@ export const is_layered_object = register_predicate("is_layered_object", (a: any
 })
 
 
-export function construct_layer_ui(layer: Layer, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): any{ 
-    return (maybeObj: any, ...updates: any[]): any => {
+export function construct_layer_ui(layer: Layer, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): (maybeObj: LayeredObject | any, ...updates: any[]) => LayeredObject{ 
+    return (maybeObj: LayeredObject | any, ...updates: any[]): LayeredObject => {
       
         if (is_layered_object(maybeObj)){
-            const layered_object = maybeObj
+            const layered_object : LayeredObject = maybeObj
             const constructed_update = value_constructor(get_base_value(layered_object), ...updates)
             if (layer.has_value(layered_object)){
                 return layered_object.update_layer(layer, merge(constructed_update, layered_object.get_layer_value(layer)))
@@ -133,7 +133,7 @@ export function construct_layer_ui(layer: Layer, value_constructor: (base_value:
             }
         }
         else{
-            const base = maybeObj
+            const base : any = maybeObj
             const constructed_update = value_constructor(base, ...updates)
             return layered_object(base, [layer, constructed_update])
         }   
