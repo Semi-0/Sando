@@ -1,8 +1,8 @@
 import { register_predicate } from "generic-handler/Predicates";
 
-import { base_layer, is_layer, type Layer } from "./Layer";
+import { base_layer, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, map, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, map_to_same_set, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get, map_to_new_set, map_to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { pipe } from "fp-ts/lib/function";
 import { is_bundled_obj } from "./Bundle";
@@ -16,7 +16,7 @@ export interface LayeredObject {
     has_layer(layer: Layer): boolean;
     get_layer_value(layer: Layer): any | undefined;
     update_layer(layer: Layer, value: any): LayeredObject;
-    annotation_layers(): Layer[];
+    annotation_layers(): BetterSet<Layer>;
     summarize_self(): string[]; 
     describe_self(): string[];
 }
@@ -29,19 +29,16 @@ export const every = register_predicate("every", (predicate: (a: any) => boolean
     return get_length(filter(set, predicate)) === get_length(set)
 })
 
+export function get_alist_pair_name(pair: [Layer, any]): string{
+    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", inspect(pair, {depth: 100})))
+    return pair[0].get_name()
+}
+
 export function make_layered_alist(plist: [Layer, any][]): BetterSet<any>{
-    console.log("plist: " + inspect(plist, {depth: 100}))
-    return construct_better_set(plist, (a: [Layer, any]) => {
-        console.log("length: " + a.length)
-        guard(is_proper_pair(a), throw_error("make_layered_alist", "Item is not a proper pair", inspect(a, {depth: 100})))
-        
-        return a[0].get_name()
-    })
+    return construct_better_set(plist, get_alist_pair_name)
 }
 
 export const is_proper_pair = register_predicate("is_proper_pair", (a: any): a is [Layer, any] => {
-    console.log("is_pair: " + is_pair(a))
-    console.log("is_layer: " + is_layer(a[0]))
     return is_pair(a) && is_layer(a[0])
 })
 
@@ -60,6 +57,7 @@ export function assv(template_layer: Layer, alist: BetterSet<[Layer, any]>): any
 }
 
 export function layered_object(base_layer: any, ...plist: [Layer, any][]): LayeredObject{
+    console.log("layered_object plist: " + inspect(plist, {depth: 100}))
     return construct_layered_object(base_layer, make_layered_alist(plist))
 }
 
@@ -77,6 +75,7 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     }
 
     function get_layer_value(layer: Layer): any | undefined {
+        console.log("get_layer_value: layer: " + layer.get_name())
         return assv(layer, alist)?.[1]
     }
 
@@ -87,9 +86,15 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     }
 
 
-    function annotation_layers(): Layer[] {
+    function annotation_layers(): BetterSet<Layer> {
         // remove the last element because it is the base layer
-        return map(alist, (v: [Layer, any]) => v[0]).splice(0, get_length(alist) - 1)
+        // TODO!!!: if the original map is fixed the
+        // const result = map_to_new_set(alist, (v: [Layer, any]) => {return v[0]}, get_layer_name)
+
+        return pipe(alist, 
+            (s: BetterSet<[Layer, any]>) => map_to_new_set(s, (v: [Layer, any]) => {return v[0]}, get_layer_name),
+            (s: BetterSet<Layer>) => filter(s, (layer: Layer) => !is_base_layer(layer))
+        )
     }
 
     function summarize_self(): string[]{
@@ -97,7 +102,7 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     } 
 
     function describe_self(): string[]{
-        return map(alist, (v: [Layer, any]) => v[0].get_name() + " layer: " + v[1])
+        return map_to_array(alist, (v: [Layer, any]) => v[0].get_name() + " layer: " + v[1] + "\n")
     }
 
     return {
@@ -121,6 +126,7 @@ export function construct_layer_ui(layer: Layer, value_constructor: (value: any)
     return (maybeObj: any, update: any): any => {
         const constructed_update = value_constructor(update)
         if (is_layered_object(maybeObj)){
+            console.log("maybeObj: " + inspect(maybeObj, {depth: 100}))
             const layered_object = maybeObj
             if (layer.has_value(layered_object)){
                 return layered_object.update_layer(layer, merge(constructed_update, layered_object.get_layer_value(layer)))
@@ -130,6 +136,7 @@ export function construct_layer_ui(layer: Layer, value_constructor: (value: any)
         }
         else{
             const base = maybeObj
+      
             return layered_object(base, [layer, constructed_update])
         }   
     }

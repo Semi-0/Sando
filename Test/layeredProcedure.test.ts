@@ -22,7 +22,7 @@ describe("test support layer operation", () => {
         const obj2 = support_by(2, "test2")
         const test_proc =  make_layered_procedure("test_proc", 1, (a: any, b: any) => a + b)
         const obj3 = test_proc(obj, obj2)
-        expect((obj3)).toEqual(3)
+        expect(get_base_value(obj3)).toEqual(3)
         expect(to_array(get_support_layer_value(obj3))).toEqual(["test", "test2"])
     })
 
@@ -35,8 +35,6 @@ describe("test support layer operation", () => {
             return pipe(merge(a, b, a.identify_by), (s: BetterSet<string>) => add(s, to_string(base_layer)))
         })
         const obj3 = merge_support_string(obj, obj2)
-
-
 
         expect(get_base_value(obj3)).toEqual(3)
         expect(to_array(get_support_layer_value(obj3))).toEqual(["test", "test2", "3"])

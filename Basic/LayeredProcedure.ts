@@ -1,13 +1,15 @@
-
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
-import {  base_layer, is_layer, type Layer } from "./Layer"
-import { construct_layered_object, type LayeredObject } from "./LayeredObject"
+import {  base_layer, get_layer_name, is_layer, type Layer } from "./Layer"
+import { construct_layered_object, get_alist_pair_name, type LayeredObject } from "./LayeredObject"
 import { pipe } from "fp-ts/lib/function"
 import { map, reduce } from "generic-handler/built_in_generics/generic_array_operation"
-import { add_item, construct_better_set, filter, find, is_better_set, merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { add_item, construct_better_set, filter, find, is_better_set, map_to_new_set, merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { register_predicate } from "generic-handler/Predicates";
 import { is_bundled_obj } from "./Bundle";
+import { inspect } from "bun"
+import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
+import type { throwError } from "fp-ts/lib/Option"
 
 
 export interface LayeredProcedureMetadata {
@@ -113,29 +115,25 @@ function _define_layered_procedure_handler(procedure: (...args: any) => any, lay
 
 function layered_procedure_dispatch(metaData: LayeredProcedureMetadata, ...args: any[]) {
         const base_procedure = metaData.get_base_procedure();
-        const base_value = base_procedure(...map(args, (a: any) => base_layer().get_value(a)))
+        const base_value = base_procedure(...map(args, (a: LayeredObject) => base_layer().get_value(a)))
      
-        const annotation_layers : BetterSet<Layer> =  reduce(args.map(a => a.get_annotation_layers()),
+        const annotation_layers : BetterSet<Layer> =  reduce(args.map((a: LayeredObject) => a.annotation_layers()),
             (a: BetterSet<Layer>, b: BetterSet<Layer>) => {
-                return merge(a, b, (l: Layer) => l.get_name())
-            }, construct_better_set([], (l: Layer) => l.get_name()))
+                return merge<Layer>(a, b, get_layer_name)
+            }, construct_better_set([], get_layer_name)
+        );
 
         return construct_layered_object(
             base_value,
 
             pipe(annotation_layers, 
-                (s: BetterSet<Layer>) => map(s, (layer: Layer) => {
-                    const handler = metaData.get_handler(layer);
-                    if (handler) {
-                        return [layer.get_name(), handler(base_value, ...args.map(a => layer.get_value(a)))]
-                    }
-                    else{
-                        return  undefined
-                    }
-                }, 
-                (s: BetterSet<Layer>) => filter(s, (l: Layer) => l !== undefined)
+                (s: BetterSet<Layer>) => map_to_new_set(s, (layer: Layer): [Layer, any] => {
+                    const handler = metaData.get_handler(layer); 
+                    return [layer, handler ? handler(base_value, ...args.map(a => layer.get_value(a))) : undefined];
+                }, get_alist_pair_name), 
+                (s: BetterSet<[Layer, any]>) => filter(s, ([_, value]) => value !== undefined)
             )
-    ));
+    );
  };
 
 

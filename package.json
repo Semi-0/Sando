@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "fp-ts": "^2.16.9",
-    "generic-handler": "0.3.3"
+    "generic-handler": "0.3.4"
   }
 }
