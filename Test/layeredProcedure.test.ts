@@ -9,6 +9,7 @@ import { describe, it, expect } from "bun:test"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { define_layered_procedure_handler, make_layered_procedure } from "../Basic/LayeredProcedure"
 import { pipe } from "fp-ts/lib/function"
+import { get_error_layer_value, has_error_layer, make_error_pair, mark_error } from "../Specified/ErrorLayer"
 
 
 describe("test support layer operation", () => {
@@ -59,6 +60,45 @@ describe("test support layer operation", () => {
 
 
     });
+
+
+    describe("test error layer operations", () => {
+        it("should add an error to a layered object", () => {
+            const obj = mark_error(1, "Test error")
+            expect(has_error_layer(obj)).toBe(true)
+            const errors = get_error_layer_value(obj)
+            expect(errors.length).toBe(1)
+            expect(errors[0].get_error()).toBe("Test error")
+            expect(errors[0].get_value()).toBe(1)
+        })
+    
+        it("should merge error layers with default procedure", () => {
+            const obj1 = mark_error(1, "Error 1")
+            const obj2 = mark_error(2, "Error 2")
+            const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+            const result = merge_proc(obj1, obj2)
+    
+            expect(get_base_value(result)).toBe(3)
+            const errors = get_error_layer_value(result)
+            expect(errors.length).toBe(2)
+            expect(errors[0].get_error()).toBe("Error 1")
+            expect(errors[1].get_error()).toBe("Error 2")
+        })
+    
+        it("should handle multiple errors on the same object", () => {
+            const obj = mark_error(mark_error(1, "Error 1"), "Error 2")
+            const errors = get_error_layer_value(obj)
+            expect(errors.length).toBe(2)
+            expect(errors[0].get_error()).toBe("Error 2")
+            expect(errors[1].get_error()).toBe("Error 1")
+        })
+    
+        it("should correctly use construct_error_value", () => {
+            const errorPair = make_error_pair("Test error", 42)
+            expect(errorPair.get_error()).toBe("Test error")
+            expect(errorPair.get_value()).toBe(42)
+        })
+    })
 
     // KNOWN ISSUES: LAYERED PROCEDURES WOULD KILLS TAIL-RECURSION, JAY SUSSMAN SOLVE THE ISSUE BY ALTER THE INTERPRETER
     // it("should support Fibonacci calculation with customized layered procedure", () => {

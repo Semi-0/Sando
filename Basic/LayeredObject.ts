@@ -1,6 +1,6 @@
 import { register_predicate } from "generic-handler/Predicates";
 
-import { base_layer, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
+import { base_layer, get_base_value, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set, map_to_same_set, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get, map_to_new_set, map_to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
@@ -57,7 +57,6 @@ export function assv(template_layer: Layer, alist: BetterSet<[Layer, any]>): any
 }
 
 export function layered_object(base_layer: any, ...plist: [Layer, any][]): LayeredObject{
-    console.log("layered_object plist: " + inspect(plist, {depth: 100}))
     return construct_layered_object(base_layer, make_layered_alist(plist))
 }
 
@@ -75,7 +74,6 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
     }
 
     function get_layer_value(layer: Layer): any | undefined {
-        console.log("get_layer_value: layer: " + layer.get_name())
         return assv(layer, alist)?.[1]
     }
 
@@ -122,12 +120,12 @@ export const is_layered_object = register_predicate("is_layered_object", (a: any
 })
 
 
-export function construct_layer_ui(layer: Layer, value_constructor: (value: any) => any, merge: (new_value: any, old_values: any) => any): any{ 
-    return (maybeObj: any, update: any): any => {
-        const constructed_update = value_constructor(update)
+export function construct_layer_ui(layer: Layer, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): any{ 
+    return (maybeObj: any, ...updates: any[]): any => {
+      
         if (is_layered_object(maybeObj)){
-            console.log("maybeObj: " + inspect(maybeObj, {depth: 100}))
             const layered_object = maybeObj
+            const constructed_update = value_constructor(get_base_value(layered_object), ...updates)
             if (layer.has_value(layered_object)){
                 return layered_object.update_layer(layer, merge(constructed_update, layered_object.get_layer_value(layer)))
             } else {
@@ -136,7 +134,7 @@ export function construct_layer_ui(layer: Layer, value_constructor: (value: any)
         }
         else{
             const base = maybeObj
-      
+            const constructed_update = value_constructor(base, ...updates)
             return layered_object(base, [layer, constructed_update])
         }   
     }

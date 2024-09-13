@@ -1,12 +1,8 @@
-import { add_item, type BetterSet, construct_better_set, is_better_set, merge_set } from "generic-handler/built_in_generics/generic_better_set"
-import { add } from "generic-handler/built_in_generics/generic_arithmetic"
+import {  type BetterSet, construct_better_set,  merge_set } from "generic-handler/built_in_generics/generic_better_set"
 import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer"
 import { default_merge_procedure } from "../Basic/LayerGenerics"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
-import {  construct_layer_ui, is_layered_object, type LayeredObject } from "../Basic/LayeredObject"
-import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure"
-import { is_string } from "generic-handler/built_in_generics/generic_predicates"
+import {  construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject"
 
 export const support_layer = make_annotation_layer("support", (get_name: () => string, 
                                                               has_value: (object: any) => boolean,
@@ -43,11 +39,14 @@ export function has_support_layer(a: LayeredObject): boolean{
 
 export const get_support_layer_value = layer_accessor(support_layer)
 
-export function construct_support_value(new_value: any): BetterSet<string>{
-    return construct_better_set([new_value], (a: string) => to_string(a))
+export function construct_support_value(base_value: any, ...values: any[]): BetterSet<string>{
+    return construct_better_set(values, (a: string) => to_string(a))
 }
 
-export const support_by = construct_layer_ui(support_layer, construct_support_value, 
-                                            (new_value: any, old_values: any) => {
-                                                    return merge_set(construct_support_value(new_value), old_values)
-                                            })
+export const support_by = construct_layer_ui(
+    support_layer,
+    construct_support_value,
+    (new_value: any, old_values: any) => {
+        return merge_set(construct_support_value(new_value), old_values);
+    }
+);

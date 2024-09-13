@@ -87,8 +87,6 @@ export function make_annotation_layer(name: string,
 
 export function layer_accessor(layer: Layer){
     return (object: LayeredObject) => {
-        console.log("layer_accessor: layer: " + layer.get_name())
-        console.log("layer_accessor: object: " + object.describe_self())
         return layer.get_value(object)
     }
 }
