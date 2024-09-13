@@ -1,6 +1,6 @@
-import { add, construct_better_set, merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { add, construct_better_set, get_length, merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { get_support_layer_value, support_by, support_layer } from "../Specified/SupportLayer"
-import { the_unit_layer } from "../Specified/UnitLayers" 
+
 import { get_base_value } from "../Basic/Layer"
 
 
@@ -10,6 +10,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { define_layered_procedure_handler, make_layered_procedure } from "../Basic/LayeredProcedure"
 import { pipe } from "fp-ts/lib/function"
 import { get_error_layer_value, has_error_layer, make_error_pair, mark_error } from "../Specified/ErrorLayer"
+import { annotate_time, get_time_layer_value, has_time_layer } from "../Specified/TimeLayer"
 
 
 describe("test support layer operation", () => {
@@ -99,67 +100,187 @@ describe("test support layer operation", () => {
             expect(errorPair.get_value()).toBe(42)
         })
     })
-
-    // KNOWN ISSUES: LAYERED PROCEDURES WOULD KILLS TAIL-RECURSION, JAY SUSSMAN SOLVE THE ISSUE BY ALTER THE INTERPRETER
-    // it("should support Fibonacci calculation with customized layered procedure", () => {
-    //     const fib = make_layered_procedure("fib", 0, (n: number) => {
-    //         if (n <= 1) return n;
-    //         return fib(n - 1) + fib(n - 2);
-    //     });
-    
-    //     define_layered_procedure_handler(fib, the_support_layer, (base_layer: number, a: BetterSet<string>) => {
-    //         return add(a, `fib(${base_layer})`);
-    //     });
-    
-    //     const result = fib(5);
-    
-    //     expect(get_base_value(result)).toEqual(5);
-    //     expect(to_array(get_support_layer_value(result)).sort()).toEqual([
-    //         "fib(0)", "fib(1)", "fib(2)", "fib(3)", "fib(4)", "fib(5)"
-    //     ]);
-    // });
 })
 
-// // ... existing imports ...
-// import { annotate_error, get_error_layer_value, has_error_layer, StandardError } from "../Specified/ErrorLayer"
-// import { base_layer, get_base_value } from "../Basic/Layer"
+describe("test time layer operations", () => {
+    it("should add a timestamp to a layered object", () => {
+        const now = Date.now()
+        const obj = annotate_time(1, now)
+        expect(has_time_layer(obj)).toBe(true)
+        const timeValue = get_time_layer_value(obj)
+        expect(timeValue.value).toBe(1)
+        expect(timeValue.timestamp).toBe(now)
+    })
+
+    it("should use current time if no timestamp provided", () => {
+        const before = Date.now()
+        const obj = annotate_time(1)
+        const after = Date.now()
+        const timeValue = get_time_layer_value(obj)
+        expect(timeValue.value).toBe(1)
+        expect(timeValue.timestamp).toBeGreaterThanOrEqual(before)
+        expect(timeValue.timestamp).toBeLessThanOrEqual(after)
+    })
+
+    it("should merge time layers with default procedure", () => {
+        const obj1 = annotate_time(1, 1000)
+        const obj2 = annotate_time(2, 2000)
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(obj1, obj2)
+
+        expect(get_base_value(result)).toBe(3)
+        const timeValue = get_time_layer_value(result)
+        expect(timeValue.value).toBe(2)
+        expect(timeValue.timestamp).toBe(2000)
+    })
+
+    it("should keep the latest timestamp when merging", () => {
+        const obj1 = annotate_time(1, 2000)
+        const obj2 = annotate_time(2, 1000)
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(obj1, obj2)
+
+        expect(get_base_value(result)).toBe(3)
+        const timeValue = get_time_layer_value(result)
+        expect(timeValue.value).toBe(2)
+        expect(timeValue.timestamp).toBe(2000)
+    })
+})
 
 
-// // ... existing test suites ...
+// ... existing imports ...
+import { has_id_layer, get_id_layer_value, mark_id } from "../Specified/IdLayer"
+import { v4 as uuidv4 } from 'uuid';
+import type { LayeredObject } from "../Basic/LayeredObject"
 
-// describe("test error layer operations", () => {
-//     it("should add a minor error to a layered object", () => {
-//         const obj = annotate_error(1, "Minor issue")
-//         expect(has_error_layer(obj)).toBe(true)
-//         expect(get_error_layer_value(obj)).toEqual([new StandardError("Minor issue", 1)])
-//     })
+// ... existing test suites ...
 
-//     it("should throw on critical error", () => {
-//         expect(() => {
-//             annotate_error(1, "Critical issue")
-//         }).toThrow("Critical error in layered object: [\"Critical issue\"]")
-//     })
-//     it("should merge error layers with default procedure", () => {
-//         const obj1 = annotate_error(1, new StandardError("Error 1", 1))
-//         const obj2 = annotate_error(2, new StandardError("Error 2", 2))
-//         const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
-//         const result = merge_proc(obj1, obj2)
+describe("test id layer operations", () => {
+    it("should add an id to a layered object", () => {
+        const obj: LayeredObject = mark_id(1)
+        expect(has_id_layer(obj)).toBe(true)
+        const idSet: BetterSet<string> = get_id_layer_value(obj)
+        expect(get_length(idSet)).toBe(1)
+        const id = to_array(idSet)[0]
+        expect(typeof id).toBe("string")
+        expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/) // UUID v4 format
+    })
 
-//         expect(get_base_value(result)).toBe(3)
-//         expect(get_error_layer_value(result)).toEqual([
-//             new StandardError("Error 1", 1),
-//             new StandardError("Error 2", 2)
-//         ])
-//     })
+    it("should merge id layers with default procedure", () => {
+        const obj1 = mark_id(1)
+        const obj2 = mark_id(2)
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(obj1, obj2)
 
-//     it("should handle multiple errors", () => {
-//         const obj = annotate_error(
-//             annotate_error(1, new StandardError("Error 1", 1)),
-//             new StandardError("Error 2", 1)
-//         )
-//         expect(get_error_layer_value(obj)).toEqual([
-//             new StandardError("Error 1", 1),
-//             new StandardError("Error 2", 1)
-//         ])
-//     })
-// })
+        expect(get_base_value(result)).toBe(3)
+        const idSet = get_id_layer_value(result)
+        expect(get_length(idSet)).toBe(2)
+    })
+
+    it("should keep unique ids when merging multiple times", () => {
+        const obj1 = mark_id(1)
+        const obj2 = mark_id(2)
+        const obj3 = mark_id(3)
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(merge_proc(obj1, obj2), obj3)
+
+        expect(get_base_value(result)).toBe(6)
+        const idSet = get_id_layer_value(result)
+        expect(get_length(idSet)).toBe(3)
+    })
+})
+
+// ... existing imports ...
+import { has_log_layer, get_log_layer_value, add_log, make_log_entry } from "../Specified/LogLayer"
+import { is_log_entry, is_log_entry_list } from "../Specified/LogLayer"
+
+// ... existing test suites ...
+
+describe("test log layer operations", () => {
+    it("should add a log entry to a layered object", () => {
+        const obj = add_log(1, "Test log message")
+        expect(has_log_layer(obj)).toBe(true)
+        const logEntries = get_log_layer_value(obj)
+        expect(is_log_entry_list(logEntries)).toBe(true)
+        expect(logEntries.length).toBe(1)
+        expect(logEntries[0].get_message()).toBe("Test log message")
+    })
+
+    it("should merge log layers with default procedure", () => {
+        const obj1 = add_log(1, "Log 1")
+        const obj2 = add_log(2, "Log 2")
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(obj1, obj2)
+
+        expect(get_base_value(result)).toBe(3)
+        const logEntries = get_log_layer_value(result)
+        expect(logEntries.length).toBe(2)
+        expect(logEntries[0].get_message()).toBe("Log 1")
+        expect(logEntries[1].get_message()).toBe("Log 2")
+    })
+
+    it("should handle multiple log entries on the same object", () => {
+        const obj = add_log(add_log(1, "Log 1"), "Log 2")
+        const logEntries = get_log_layer_value(obj)
+        expect(logEntries.length).toBe(2)
+  
+        expect(logEntries[0].get_message()).toBe("Log 1")
+        expect(logEntries[1].get_message()).toBe("Log 2")
+    })
+
+    it("should correctly use make_log_entry", () => {
+        const logEntry = make_log_entry(1, "Test log")
+        expect(is_log_entry(logEntry)).toBe(true)
+        expect(logEntry.get_message()).toBe("Test log")
+        expect(typeof logEntry.get_timestamp()).toBe("number")
+    })
+
+    it("should merge log entries correctly", () => {
+        const obj1 = add_log(1, "Log 1")
+        const obj2 = add_log(2, "Log 2")
+        const obj3 = add_log(3, "Log 3")
+        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
+        const result = merge_proc(merge_proc(obj1, obj2), obj3)
+
+        expect(get_base_value(result)).toBe(6)
+        const logEntries = get_log_layer_value(result)
+        expect(logEntries.length).toBe(3)
+      
+        expect(logEntries[0].get_message()).toBe("Log 1")
+        expect(logEntries[1].get_message()).toBe("Log 2")
+        expect(logEntries[2].get_message()).toBe("Log 3")
+    })
+})
+
+
+import {
+    is_procedure_with_sticky_note,
+    stick,
+    add_sticky_note,
+    retrieve_layers
+  } from '../StickyNote';
+  
+  describe('StickyNoteLayer', () => {
+    // Test sticky_note_layer
+  
+  
+    // Test is_procedure_with_sticky_note and stick
+    it('is_procedure_with_sticky_note and stick should work correctly', () => {
+      const testFunc = () => {};
+      expect(is_procedure_with_sticky_note(testFunc)).toBe(false);
+  
+      const stickyFunc = stick(testFunc, () => ({} as LayeredObject));
+      expect(is_procedure_with_sticky_note(stickyFunc)).toBe(true);
+    });
+  
+    // Test add_sticky_note and retrieve_layers
+    it('add_sticky_note and retrieve_layers should work correctly', () => {
+      const testFunc = () => {};
+      const layeredObject = {} as LayeredObject;
+  
+      add_sticky_note(testFunc, layeredObject);
+      expect(retrieve_layers(testFunc)).toBe(layeredObject);
+    });
+  
+
+  });

@@ -10,7 +10,9 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@types/uuid": "^10.0.0",
     "fp-ts": "^2.16.9",
-    "generic-handler": "0.3.4"
+    "generic-handler": "0.3.4",
+    "uuid": "^10.0.0"
   }
 }

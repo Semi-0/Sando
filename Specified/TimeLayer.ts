@@ -1,50 +1,74 @@
-import { Layer } from "../Basic/Layer"
-import { default_merge_procedure } from "../Basic/LayerGenerics"
-import { to_string } from "generic-handler/built_in_generics/generic_conversation"
-import { add_layer, LayeredObject } from "../Basic/LayeredObject"
-import { guard } from "generic-handler/built_in_generics/other_generic_helper"
+import { construct_simple_generic_procedure, define_generic_procedure_handler, error_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer";
+import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
+import { default_merge_procedure } from "../Basic/LayerGenerics";
+import { all_match, register_predicate } from "generic-handler/Predicates";
+import { guard } from "generic-handler/built_in_generics/other_generic_helper";
 
-
-// TODO:
-
-interface TimeStampedValue {
+export interface TimeStampedValue {
     value: any;
     timestamp: number;
 }
 
-export class TimeLayer extends Layer {
-    constructor(timestampedValue: TimeStampedValue) {
-        super("time", timestampedValue)
-    }
-
-    override get_procedure(name: string, arity: number) {
-        return default_merge_procedure(
-            (a: TimeStampedValue, b: TimeStampedValue) => ({
-                value: b.value,
-                timestamp: Math.max(a.timestamp, b.timestamp)
-            }),
-            { value: undefined, timestamp: 0 }
-        )
-    }
+export function make_timestamped_value(value: any, timestamp: number = Date.now()): TimeStampedValue {
+    return { value, timestamp };
 }
 
-//TODO:
-export function annotate_time(base: any, value?: any) {
-    const timestamp = Date.now()
-    const timestampedValue: TimeStampedValue = {
-        value: value !== undefined ? value : base,
-        timestamp: timestamp
+export const is_timestamped_value = register_predicate("is_timestamped_value", (a: any): a is TimeStampedValue => {
+    return typeof a === "object" && "value" in a && "timestamp" in a && typeof a.timestamp === "number";
+});
+
+export const merge_timestamped_value = construct_simple_generic_procedure("merge_timestamped_value", 2, error_generic_procedure_handler("merge_timestamped_value"));
+
+define_generic_procedure_handler(merge_timestamped_value, all_match(is_timestamped_value), (a: TimeStampedValue, b: TimeStampedValue) => {
+    return {
+        value: b.value,
+        timestamp: Math.max(a.timestamp, b.timestamp)
+    };
+});
+
+export const time_layer = make_annotation_layer("time", (get_name: () => string, 
+                                                         has_value: (object: any) => boolean,
+                                                         get_value: (object: any) => any): Layer => {  
+    function get_default_value(): TimeStampedValue {
+        return { value: undefined, timestamp: 0 };
     }
-    return add_layer(base, new TimeLayer(timestampedValue))
-}
+
+    function get_procedure(name: string, arity: number): any | undefined {
+        return default_merge_procedure(merge_timestamped_value, get_default_value());
+    }
+
+    function summarize_self(): string[] {
+        return ["time"];
+    }
+
+    return {
+        identifier: "layer",
+        get_name,
+        has_value,
+        get_value,
+        get_default_value,
+        get_procedure,
+        summarize_self
+    };
+});
 
 export function has_time_layer(a: LayeredObject): boolean {
-    return a.has_layer("time")
+    return time_layer.has_value(a);
+}    
+
+export const get_time_layer_value = layer_accessor(time_layer);
+
+export function construct_time_value(base_value: any, timestamp?: number): TimeStampedValue {
+    return make_timestamped_value(base_value, timestamp);
 }
 
-export function get_time_layer_value(a: LayeredObject): TimeStampedValue {
-    guard(has_time_layer(a), () => { throw new Error("No time layer") })
-    return a.get_layer_value("time")
-}
+export const annotate_time = construct_layer_ui(
+    time_layer,
+    construct_time_value,
+    (new_value: TimeStampedValue, old_value: TimeStampedValue) => {
+        return merge_timestamped_value(new_value, old_value);
+    }
+);
 
-export const the_time_layer = new TimeLayer({ value: undefined, timestamp: 0 })
+export const annotate_now = (base_value: any) => annotate_time(base_value, Date.now());
