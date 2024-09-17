@@ -119,6 +119,14 @@ export const is_layered_object = register_predicate("is_layered_object", (a: any
     return is_bundled_obj("layered_object")(a)
 })
 
+export function get_annotation_layers(obj: any | LayeredObject): BetterSet<Layer>{
+    if (is_layered_object(obj)){
+        return obj.annotation_layers()
+    }
+    else{
+        return construct_better_set([], get_layer_name)
+    }
+}
 
 export function construct_layer_ui(layer: Layer, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): (maybeObj: LayeredObject | any, ...updates: any[]) => LayeredObject{ 
     return (maybeObj: LayeredObject | any, ...updates: any[]): LayeredObject => {

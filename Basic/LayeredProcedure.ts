@@ -1,7 +1,7 @@
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
 import {  base_layer, get_layer_name, is_layer, type Layer } from "./Layer"
-import { construct_layered_object, get_alist_pair_name, type LayeredObject } from "./LayeredObject"
+import { construct_layered_object, get_alist_pair_name, get_annotation_layers, type LayeredObject } from "./LayeredObject"
 import { pipe } from "fp-ts/lib/function"
 import { map, reduce } from "generic-handler/built_in_generics/generic_array_operation"
 import { add_item, construct_better_set, filter, find, is_better_set, map_to_new_set, merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
@@ -118,7 +118,8 @@ function layered_procedure_dispatch(metaData: LayeredProcedureMetadata, ...args:
         const base_procedure = metaData.get_base_procedure();
         const base_value = base_procedure(...map(args, (a: LayeredObject) => base_layer().get_value(a)))
      
-        const annotation_layers : BetterSet<Layer> =  reduce(args.map((a: LayeredObject) => a.annotation_layers()),
+        const annotation_layers : BetterSet<Layer> =  reduce(args.map((a: LayeredObject) => get_annotation_layers(a)),
+
             (a: BetterSet<Layer>, b: BetterSet<Layer>) => {
                 return merge<Layer>(a, b, get_layer_name)
             }, construct_better_set([], get_layer_name)
