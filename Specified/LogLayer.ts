@@ -70,6 +70,10 @@ export const log_layer = make_annotation_layer("log", (get_name: () => string,
         return ["log"]
     }
 
+    function summarize_value(object: LayeredObject): string[]{
+        return get_value(object).map((a: LogEntry) => a.describe_self())
+    }
+
     return {
         identifier: "layer",
         get_name,
@@ -77,7 +81,8 @@ export const log_layer = make_annotation_layer("log", (get_name: () => string,
         get_value,
         get_default_value,
         get_procedure,
-        summarize_self
+        summarize_self,
+        summarize_value
     }
 })
 

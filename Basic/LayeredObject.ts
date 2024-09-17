@@ -18,7 +18,7 @@ export interface LayeredObject {
     update_layer(layer: Layer, value: any): LayeredObject;
     annotation_layers(): BetterSet<Layer>;
     summarize_self(): string[]; 
-    describe_self(): string[];
+    describe_self(): string;
 }
 
 export const is_pair = register_predicate("is_pair", (a: any): a is [any, any] => {
@@ -81,6 +81,7 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
 
         return construct_layered_object(base_value, add_item(alist, [layer, value]))
     }
+    
 
 
     function annotation_layers(): BetterSet<Layer> {
@@ -98,11 +99,14 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
         return [base_value]
     } 
 
-    function describe_self(): string[]{
-        return map_to_array(alist, (v: [Layer, any]) => v[0].get_name() + " layer: " + inspect(v[1], {depth: 100}) + "\n")
+    function describe_self(): string{
+        const base_layer_description = get_layer_value(base_layer())
+        return [base_layer_description, ...map_to_array(annotation_layers(), (layer: Layer) => {
+            return layer.get_name() + " layer: " + layer.summarize_value(self)
+        })].join("\n") 
     }
 
-    return {
+    const self = {
         identifier: "layered_object",
         alist,
         has_layer,
@@ -110,8 +114,9 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
         get_layer_value,
         annotation_layers,
         summarize_self,
-        describe_self
+        describe_self 
     }
+    return self
 }
 
 export const is_layered_object = register_predicate("is_layered_object", (a: any): a is LayeredObject => {

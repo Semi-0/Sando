@@ -4,10 +4,16 @@ import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, register_predicate } from "generic-handler/Predicates";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
+import { inspect } from "bun";
+import { timestamp_to_ordinary_time } from "../utility";
 
 export interface TimeStampedValue {
     value: any;
     timestamp: number;
+}
+
+export function describe_timestamped_value(a: TimeStampedValue): string {
+    return "value:" + inspect(a.value, {depth: 100}) + ", timestamp:" +  timestamp_to_ordinary_time(a.timestamp)
 }
 
 export function make_timestamped_value(value: any, timestamp: number = Date.now()): TimeStampedValue {
@@ -42,6 +48,10 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         return ["time"];
     }
 
+    function summarize_value(object: LayeredObject): string[]{
+        return [inspect(get_value(object), {depth: 100})]
+    }
+
     return {
         identifier: "layer",
         get_name,
@@ -49,7 +59,8 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         get_value,
         get_default_value,
         get_procedure,
-        summarize_self
+        summarize_self,
+        summarize_value
     };
 });
 

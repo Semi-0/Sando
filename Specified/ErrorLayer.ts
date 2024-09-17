@@ -6,6 +6,7 @@ import { all_match, match_args, register_predicate } from "generic-handler/Predi
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_layered_procedure_handler } from "../Basic/LayeredProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { inspect } from "bun";
 
 
 export interface ErrorPair{
@@ -13,6 +14,7 @@ export interface ErrorPair{
     get_error(): string
     get_value(): any
     merge(other: ErrorPair): ErrorPair[]
+    summarize_value(): string
 }
 
 export function make_error_pair(error: string, value: any): ErrorPair{
@@ -20,7 +22,8 @@ export function make_error_pair(error: string, value: any): ErrorPair{
         identifier: "error_pair",
         get_error,
         get_value,
-        merge
+        merge,
+        summarize_value
     }
     function get_error(): string{
         return error
@@ -32,6 +35,10 @@ export function make_error_pair(error: string, value: any): ErrorPair{
 
     function merge(other: ErrorPair): ErrorPair[]{
         return [error_pair, other]
+    }
+
+    function summarize_value(): string{
+        return  error + ", value:" + inspect(value, {depth: 100})
     }
 
     return error_pair
@@ -84,6 +91,10 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
         return get_value(object)
     }
 
+    function summarize_value(object: LayeredObject): string[]{
+        return [get_value(object).map((a: ErrorPair) => a.summarize_value()).join("\n")]
+    }
+
     return {
         identifier: "layer",
         get_name,
@@ -91,7 +102,8 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
         get_value,
         get_default_value,
         get_procedure,
-        summarize_self
+        summarize_self,
+        summarize_value
     }
 })
 

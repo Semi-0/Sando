@@ -12,7 +12,9 @@ export interface Layer{
     get_value(object: LayeredObject): any
     get_default_value(): any 
     summarize_self(): string[]
-    get_procedure(name: string, arity: number): any | undefined
+    get_procedure(name: string, arity: number): any | undefined,
+    summarize_value(object: LayeredObject): string[]
+
 }
 
 
@@ -47,6 +49,9 @@ export function base_layer(): Layer{
         throw new Error("base_layer: get_procedure not implemented")
     }
 
+    function summarize_value(object: LayeredObject): string[]{
+        return [inspect(get_value(object), {depth: 100})]
+    }
 
     return {
         identifier: "layer",
@@ -56,7 +61,7 @@ export function base_layer(): Layer{
         summarize_self,
         get_default_value,
         get_procedure,
-
+        summarize_value
     }
 }
 
