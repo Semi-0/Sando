@@ -64,7 +64,6 @@ export function layered_object(base_layer: any, ...plist: [Layer, any][]): Layer
 export function construct_layered_object(base_value: any, _alist: BetterSet<any> ): LayeredObject {
 
     guard(is_layered_alist(_alist), throw_error("construct_layered_object", "Alist is not a layered alist", inspect(_alist, {depth: 100})))
-    guard(get_length(_alist) > 0, throw_error("construct_layered_object", "Alist is empty", ""))
 
     const alist = add_item(_alist, [base_layer(), base_value])
 
