@@ -13,7 +13,7 @@ export interface TimeStampedValue {
 }
 
 export function describe_timestamped_value(a: TimeStampedValue): string {
-    return "value:" + inspect(a.value, {depth: 100}) + ", timestamp:" +  timestamp_to_ordinary_time(a.timestamp)
+    return "value:" + a.value + ", timestamp:" +  timestamp_to_ordinary_time(a.timestamp)
 }
 
 export function make_timestamped_value(value: any, timestamp: number = Date.now()): TimeStampedValue {
@@ -49,9 +49,8 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
     }
 
     function summarize_value(object: LayeredObject): string[]{
-        return [inspect(get_value(object), {depth: 100})]
+        return [get_value(object)]
     }
-
     return {
         identifier: "layer",
         get_name,

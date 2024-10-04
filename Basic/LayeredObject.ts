@@ -7,8 +7,6 @@ import { guard, throw_error } from "generic-handler/built_in_generics/other_gene
 import { pipe } from "fp-ts/lib/function";
 import { is_bundled_obj } from "./Bundle";
 import { is_array, is_null } from "generic-handler/built_in_generics/generic_predicates";
-import { leftReader } from "fp-ts/lib/StateReaderTaskEither";
-import { inspect } from "bun";
 
 export interface LayeredObject {
     identifier: string;
@@ -30,7 +28,7 @@ export const every = register_predicate("every", (predicate: (a: any) => boolean
 })
 
 export function get_alist_pair_name(pair: [Layer, any]): string{
-    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", inspect(pair, {depth: 100})))
+    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", typeof pair))
     return pair[0].get_name()
 }
 
@@ -63,7 +61,7 @@ export function layered_object(base_layer: any, ...plist: [Layer, any][]): Layer
 
 export function construct_layered_object(base_value: any, _alist: BetterSet<any> ): LayeredObject {
 
-    guard(is_layered_alist(_alist), throw_error("construct_layered_object", "Alist is not a layered alist", inspect(_alist, {depth: 100})))
+    guard(is_layered_alist(_alist), throw_error("construct_layered_object", "Alist is not a layered alist", typeof _alist))
 
     const alist = add_item(_alist, [base_layer(), base_value])
 

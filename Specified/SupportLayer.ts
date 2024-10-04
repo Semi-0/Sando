@@ -3,7 +3,6 @@ import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Laye
 import { default_merge_procedure } from "../Basic/LayerGenerics"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import {  construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject"
-import { inspect } from "bun"
 
 export const support_layer = make_annotation_layer("support", (get_name: () => string, 
                                                               has_value: (object: any) => boolean,

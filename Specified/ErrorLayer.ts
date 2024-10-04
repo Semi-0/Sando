@@ -5,8 +5,6 @@ import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_layered_procedure_handler } from "../Basic/LayeredProcedure";
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { inspect } from "bun";
 
 
 export interface ErrorPair{
@@ -38,7 +36,7 @@ export function make_error_pair(error: string, value: any): ErrorPair{
     }
 
     function summarize_value(): string{
-        return  error + ", value:" + inspect(value, {depth: 100})
+        return  error + ", value:" + value
     }
 
     return error_pair

@@ -4,7 +4,6 @@ import { default_merge_procedure } from "../Basic/LayerGenerics"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject"
 import { v4 as uuidv4 } from 'uuid';
-import { inspect } from "bun"
 
 export const id_layer = make_annotation_layer("id", (get_name: () => string, 
                                                     has_value: (object: any) => boolean,
@@ -25,7 +24,7 @@ export const id_layer = make_annotation_layer("id", (get_name: () => string,
     }
 
     function summarize_value(object: LayeredObject): string[]{
-        return [inspect(get_value(object), {depth: 100})]
+        return [get_value(object)]
     }
 
     return {

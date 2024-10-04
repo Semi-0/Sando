@@ -7,9 +7,6 @@ import { map, reduce } from "generic-handler/built_in_generics/generic_array_ope
 import { add_item, construct_better_set, filter, find, is_better_set, map_to_new_set, merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { register_predicate } from "generic-handler/Predicates";
 import { is_bundled_obj } from "./Bundle";
-import { inspect } from "bun"
-import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
-import type { throwError } from "fp-ts/lib/Option"
 
 //TODO: first layer procedure: To String
 
