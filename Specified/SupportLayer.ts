@@ -1,9 +1,9 @@
-import {  type BetterSet, construct_better_set,  map_to_array,  merge_set } from "generic-handler/built_in_generics/generic_better_set"
+import {  type BetterSet, construct_better_set,    merge_set } from "generic-handler/built_in_generics/generic_better_set"
 import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer"
 import { default_merge_procedure } from "../Basic/LayerGenerics"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import {  construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject"
-
+import { map_to_array } from "../utility"
 export const support_layer = make_annotation_layer("support", (get_name: () => string, 
                                                               has_value: (object: any) => boolean,
                                                               get_value: (object: any) => any): Layer => {
@@ -23,7 +23,8 @@ export const support_layer = make_annotation_layer("support", (get_name: () => s
     }
 
     function summarize_value(object: LayeredObject): string[]{
-        return map_to_array(get_value(object), (a: string) => to_string(a))
+        //@ts-ignore
+        return map_to_array(get_value(object), (a: string) => to_string(a)) 
     }
 
     return {

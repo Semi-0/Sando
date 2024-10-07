@@ -3,6 +3,7 @@ import { is_bundled_obj } from "./Bundle"
 import { andExecute } from "generic-handler/built_in_generics/generic_combinator"
 import { is_layered_object, type LayeredObject } from "./LayeredObject"
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
+import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
 export interface Layer{
     identifier: string
@@ -17,9 +18,11 @@ export interface Layer{
 }
 
 
-export function get_layer_name(layer: Layer): string{
-    guard(is_layer(layer), throw_error("get_layer_name", "type mismatch, expect layer, but got: ", typeof layer))
-    return layer.get_name()
+export function get_layer_name(layer: Layer | string): string{
+    // console.log("get_layer_name", layer)
+    guard( is_layer(layer) || is_string(layer), throw_error("get_layer_name", "type mismatch, expect layer or string, but got: ", typeof layer))
+    //@ts-ignore
+    return is_string(layer) ? layer : layer.get_name()
 }
 
 export function base_layer(): Layer{

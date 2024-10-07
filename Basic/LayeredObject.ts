@@ -2,11 +2,12 @@ import { register_predicate } from "generic-handler/Predicates";
 
 import { base_layer, get_base_value, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, map_to_same_set, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get, map_to_new_set, map_to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, map_to_same_set, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get, map_to_new_set } from "generic-handler/built_in_generics/generic_better_set";
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { pipe } from "fp-ts/lib/function";
 import { is_bundled_obj } from "./Bundle";
 import { is_array, is_null } from "generic-handler/built_in_generics/generic_predicates";
+import { map_to_array } from "../utility";
 
 export interface LayeredObject {
     identifier: string;
@@ -99,6 +100,8 @@ export function construct_layered_object(base_value: any, _alist: BetterSet<any>
 
     function describe_self(): string{
         const base_layer_description = get_layer_value(base_layer())
+        //@ts-ignore
+   
         return [base_layer_description, ...map_to_array(annotation_layers(), (layer: Layer) => {
             return layer.get_name() + " layer: " + layer.summarize_value(self)
         })].join("\n") 
@@ -126,6 +129,7 @@ export function get_annotation_layers(obj: any | LayeredObject): BetterSet<Layer
         return obj.annotation_layers()
     }
     else{
+        //@ts-ignore
         return construct_better_set([], get_layer_name)
     }
 }
