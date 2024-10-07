@@ -3,8 +3,6 @@ import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Laye
 import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, register_predicate } from "generic-handler/Predicates";
-import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import { inspect } from "bun";
 import { timestamp_to_ordinary_time } from "../utility";
 
 export interface TimeStampedValue {
