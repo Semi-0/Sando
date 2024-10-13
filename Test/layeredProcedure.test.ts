@@ -42,6 +42,14 @@ describe("test support layer operation", () => {
         expect(to_array(get_support_layer_value(obj3))).toEqual(["test", "test2", "3"])
     })
 
+    it("should merge support layer if the support is the same", () => {
+        const obj = support_by(1, "test")
+        const obj2 = support_by(1, "test")
+        const merge_support_string =  make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b)
+        const obj3 = merge_support_string(obj, obj2)
+        expect(to_array(get_support_layer_value(obj3))).toEqual(["test"])
+    })
+
     it("should work with iterative application of layered procedure", () => {
         const merge_support_string = make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b);
         
@@ -71,6 +79,13 @@ describe("test support layer operation", () => {
             expect(errors.length).toBe(1)
             expect(errors[0].get_error()).toBe("Test error")
             expect(errors[0].get_value()).toBe(1)
+        })
+
+
+        it("interface should correctly support one value with two different strings", () => {
+            const obj = support_by(1, "test")
+            const obj2 = support_by(obj, "test2")
+            expect(to_array(get_support_layer_value(obj2))).toEqual(["test", "test2"])
         })
     
         it("should merge error layers with default procedure", () => {

@@ -53,6 +53,13 @@ export const support_by = construct_layer_ui(
     support_layer,
     construct_support_value,
     (new_value: any, old_values: any) => {
-        return merge_set(construct_support_value(new_value), old_values);
+        return merge_set(old_values, new_value);
     }
 );
+
+
+// const a = 1
+// const b = support_by(a, "test") 
+// const c = support_by(b, "test2")
+
+// console.log(get_support_layer_value(c))
