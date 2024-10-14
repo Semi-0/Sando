@@ -57,7 +57,8 @@ define_generic_procedure_handler(merge_log_entry, match_args(is_log_entry_list, 
 
 export const log_layer = make_annotation_layer("log", (get_name: () => string, 
                                                        has_value: (object: any) => boolean,
-                                                       get_value: (object: any) => any): Layer => {  
+                                                       get_value: (object: any) => any,
+                                                       is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {  
     function get_default_value(): any {
         return []
     }
@@ -82,7 +83,8 @@ export const log_layer = make_annotation_layer("log", (get_name: () => string,
         get_default_value,
         get_procedure,
         summarize_self,
-        summarize_value
+        summarize_value,
+        is_equal
     }
 })
 

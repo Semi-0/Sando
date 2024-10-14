@@ -33,7 +33,8 @@ define_generic_procedure_handler(merge_timestamped_value, all_match(is_timestamp
 
 export const time_layer = make_annotation_layer("time", (get_name: () => string, 
                                                          has_value: (object: any) => boolean,
-                                                         get_value: (object: any) => any): Layer => {  
+                                                         get_value: (object: any) => any,
+                                                         is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {  
     function get_default_value(): TimeStampedValue {
         return { value: undefined, timestamp: 0 };
     }
@@ -57,7 +58,8 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         get_default_value,
         get_procedure,
         summarize_self,
-        summarize_value
+        summarize_value,
+        is_equal
     };
 });
 

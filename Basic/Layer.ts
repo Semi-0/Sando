@@ -4,6 +4,7 @@ import { andExecute } from "generic-handler/built_in_generics/generic_combinator
 import { is_layered_object, type LayeredObject } from "./LayeredObject"
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
+import { deep_equal } from "../Equality"
 
 export interface Layer{
     identifier: string
@@ -14,6 +15,7 @@ export interface Layer{
     summarize_self(): string[]
     get_procedure(name: string, arity: number): any | undefined,
     summarize_value(object: LayeredObject): string[]
+    is_equal(a: any | LayeredObject, b: any | LayeredObject): boolean
 
 }
 
@@ -55,6 +57,8 @@ export function base_layer(): Layer{
         return [get_value(object)]
     }
 
+
+
     return {
         identifier: "layer",
         get_name,
@@ -63,7 +67,8 @@ export function base_layer(): Layer{
         summarize_self,
         get_default_value,
         get_procedure,
-        summarize_value
+        summarize_value,
+        is_equal: (a: any, b: any) => get_base_value(a) === get_base_value(b)
     }
 }
 
@@ -74,8 +79,9 @@ export function is_base_layer(layer: Layer): boolean{
 export function make_annotation_layer(name: string, 
                                       constructor: (get_name: () => string, 
                                                     has_value: (object: any) => boolean,
-                                                    get_value: (object: any) => any) => Layer): Layer{                          
-
+                                                    get_value: (object: any) => any,
+                                                    is_equal: (a: LayeredObject, b: LayeredObject) => boolean) => Layer): Layer{                          
+ 
     function get_name(): string{
         return name
     }
@@ -88,7 +94,11 @@ export function make_annotation_layer(name: string,
         return has_value(object) ? object.get_layer_value(layer) : layer.get_default_value()
     }
 
-    const layer = constructor(get_name, has_value, get_value)
+    function is_equal(a:  LayeredObject, b: LayeredObject): boolean{
+        return deep_equal(get_value(a), get_value(b))
+    }
+
+    const layer = constructor(get_name, has_value, get_value, is_equal)
 
     return layer
 }

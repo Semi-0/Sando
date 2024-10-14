@@ -28,6 +28,32 @@ describe("test support layer operation", () => {
         expect(to_array(get_support_layer_value(obj3))).toEqual(["test", "test2"])
     })
 
+    it("two objects with the same support layer should be equal", () => {
+        const obj = support_by(1, "test")
+        const obj2 = support_by(1, "test")
+        expect(layered_deep_equal(obj, obj2)).toBe(true)
+    })
+
+    it("two objects with different support layer should not be equal", () => {
+        const obj = support_by(1, "test")
+        const obj2 = support_by(1, "test2")
+        expect(layered_deep_equal(obj, obj2)).toBe(false)
+    }) 
+
+    it("two objects with multiple support layer should not be equal", () => {
+        const obj = support_by(1, "test")
+        const obj2 = support_by(1, "test2")
+        expect(layered_deep_equal(obj, obj2)).toBe(false)
+    })
+
+    it("two objects with multiple same support layer should be equal", () => {
+        const m1 = support_by(1, "test")
+        const obj2 = support_by(m1, "test1")
+
+        const m2 = support_by(1, "test")
+        const obj3 = support_by(m2, "test1")
+        expect(layered_deep_equal(obj2, obj3)).toBe(true)
+    })
     it("should support customized layered procedure", () => {
         const obj = support_by(1, "test")
         const obj2 = support_by(2, "test2")
@@ -275,6 +301,7 @@ import {
     add_sticky_note,
     retrieve_layers
   } from '../StickyNote';
+import { layered_deep_equal } from "../Equality"
   
   describe('StickyNoteLayer', () => {
     // Test sticky_note_layer
