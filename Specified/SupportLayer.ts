@@ -8,7 +8,7 @@ import { deep_equal } from "../Equality"
 export const support_layer = make_annotation_layer("support", (get_name: () => string, 
                                                               has_value: (object: any) => boolean,
                                                               get_value: (object: any) => any,
-                                                              is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {
+                                                              is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {
 
     function get_default_value(): any{
         return construct_better_set([], (a: string) => to_string(a))
@@ -24,7 +24,7 @@ export const support_layer = make_annotation_layer("support", (get_name: () => s
         return ["support"]
     }
 
-    function summarize_value(object: LayeredObject): string[]{
+    function summarize_value(object: LayeredObject<any>): string[]{
         //@ts-ignore
         return map_to_array(get_value(object), (a: string) => to_string(a)) 
     }
@@ -41,7 +41,7 @@ export const support_layer = make_annotation_layer("support", (get_name: () => s
         get_procedure,
         summarize_self,
         summarize_value,
-        is_equal: (a: LayeredObject, b: LayeredObject) => {
+        is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => {
             const support_a = get_value(a)
             const support_b = get_value(b)
             return deep_equal(Array.from(support_a.meta_data.keys()), 
@@ -50,7 +50,7 @@ export const support_layer = make_annotation_layer("support", (get_name: () => s
     }
 })
 
-export function has_support_layer(a: LayeredObject): boolean{
+export function has_support_layer(a: LayeredObject<any>): boolean{
     return  support_layer.has_value(a)
 }
 

@@ -34,7 +34,7 @@ define_generic_procedure_handler(merge_timestamped_value, all_match(is_timestamp
 export const time_layer = make_annotation_layer("time", (get_name: () => string, 
                                                          has_value: (object: any) => boolean,
                                                          get_value: (object: any) => any,
-                                                         is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {  
+                                                         is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {  
     function get_default_value(): TimeStampedValue {
         return { value: undefined, timestamp: 0 };
     }
@@ -47,7 +47,7 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         return ["time"];
     }
 
-    function summarize_value(object: LayeredObject): string[]{
+    function summarize_value(object: LayeredObject<any>): string[]{
         return [get_value(object)]
     }
     return {
@@ -63,7 +63,7 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
     };
 });
 
-export function has_time_layer(a: LayeredObject): boolean {
+export function has_time_layer(a: LayeredObject<any>): boolean {
     return time_layer.has_value(a);
 }    
 

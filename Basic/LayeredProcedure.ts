@@ -19,7 +19,7 @@ export interface LayeredProcedureMetadata {
     get_name(): string;
     get_base_procedure(): (...args: any) => any;
     set_handler(name: string, handler: (b: any, ...v: any) => any): void;
-    get_handler(layer: Layer): ((b: any, ...v: any) => any) | undefined;
+    get_handler(layer: Layer<any>): ((b: any, ...v: any) => any) | undefined;
 }
 
 export function construct_layered_procedure_metadata(name: string, arity: number, base_proc: (...args: any) => any): LayeredProcedureMetadata {
@@ -37,7 +37,7 @@ export function construct_layered_procedure_metadata(name: string, arity: number
         handlers = add_item(handlers, [name, handler]);
     }
 
-    function get_handler(layer: Layer): ((b: any, ...v: any) => any) | undefined {
+    function get_handler(layer: Layer<any>): ((b: any, ...v: any) => any) | undefined {
         const layerName = layer.get_name();
         const handler = find(handlers, ([name, _]) => name === layerName);
         if (handler) {
@@ -71,9 +71,9 @@ function set_layered_procedure_metadata(proc: (arg: any) => any, metadata: Layer
     meta_data_store.set(proc, metadata)
 }
 
-export function make_layered_procedure(name: string, arity: number, base_proc: (...v: any) => any): (...args : any) => any{
+export function make_layered_procedure<T>(name: string, arity: number, base_proc: (...v: any) => T): (...args : any) => LayeredObject<T>{
     const metadata = construct_layered_procedure_metadata(name, arity, base_proc)
-    const the_layered_procedure = (...args: any[]) => layered_procedure_dispatch(metadata, ...args)
+    const the_layered_procedure = (...args: any[]) => layered_procedure_dispatch<T>(metadata, ...args)
     set_layered_procedure_metadata(the_layered_procedure, metadata)
     return the_layered_procedure
 }
@@ -111,26 +111,25 @@ function _define_layered_procedure_handler(procedure: (...args: any) => any, lay
 
 
 
-function layered_procedure_dispatch(metaData: LayeredProcedureMetadata, ...args: any[]) {
+function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...args: any[]) {
         const base_procedure = metaData.get_base_procedure();
-        const base_value = base_procedure(...map(args, (a: LayeredObject) => base_layer().get_value(a)))
-     
-        const annotation_layers : BetterSet<Layer> =  reduce(args.map((a: LayeredObject) => get_annotation_layers(a)),
+        const base_value = base_procedure(...map(args, (a: LayeredObject<any>) => base_layer().get_value(a)))
+        const annotation_layers : BetterSet<Layer<any>> =  reduce(args.map((a: LayeredObject<any>) => get_annotation_layers(a)),
 
-            (a: BetterSet<Layer>, b: BetterSet<Layer>) => {
-                return merge<Layer>(a, b, get_layer_name)
+            (a: BetterSet<Layer<any>>, b: BetterSet<Layer<any>>) => {
+                return merge<Layer<any>>(a, b, get_layer_name)
             }, construct_better_set([], get_layer_name)
         );
 
-        return construct_layered_object(
+        return construct_layered_object<T>(
             base_value,
 
             pipe(annotation_layers, 
-                (s: BetterSet<Layer>) => map_to_new_set(s, (layer: Layer): [Layer, any] => {
+                (s: BetterSet<Layer<any>>) => map_to_new_set(s, (layer: Layer<any>): [Layer<any>, any] => {
                     const handler = metaData.get_handler(layer); 
                     return [layer, handler ? handler(base_value, ...args.map(a => layer.get_value(a))) : undefined];
                 }, get_alist_pair_name), 
-                (s: BetterSet<[Layer, any]>) => filter(s, ([_, value]) => value !== undefined)
+                (s: BetterSet<[Layer<any>, any]>) => filter(s, ([_, value]) => value !== undefined)
             )
     );
  };

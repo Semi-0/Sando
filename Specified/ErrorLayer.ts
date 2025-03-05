@@ -72,7 +72,7 @@ define_generic_procedure_handler(merge_error_pair, match_args(is_error_pair_list
 export const error_layer = make_annotation_layer("error", (get_name: () => string, 
                                                            has_value: (object: any) => boolean,
                                                            get_value: (object: any) => any,
-                                                           is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {  
+                                                           is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {  
     function get_default_value(): any{
         return []
     }
@@ -86,11 +86,11 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
         return ["error"]
     }
 
-    function describe(object: LayeredObject): string[]{
+    function describe(object: LayeredObject<any>): string[]{
         return get_value(object)
     }
 
-    function summarize_value(object: LayeredObject): string[]{
+    function summarize_value(object: LayeredObject<any>): string[]{
         return [get_value(object).map((a: ErrorPair) => a.summarize_value()).join("\n")]
     }
 
@@ -107,7 +107,7 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
     }
 })
 
-export function has_error_layer(a: LayeredObject): boolean {
+export function has_error_layer(a: LayeredObject<any>): boolean {
     return error_layer.has_value(a)
 }    
 

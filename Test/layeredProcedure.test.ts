@@ -198,7 +198,7 @@ import { layered_object, type LayeredObject } from "../Basic/LayeredObject"
 
 describe("test id layer operations", () => {
     it("should add an id to a layered object", () => {
-        const obj: LayeredObject = mark_id(1)
+        const obj: LayeredObject<any> = mark_id(1)
         expect(has_id_layer(obj)).toBe(true)
         const idSet: BetterSet<string> = get_id_layer_value(obj)
         expect(get_length(idSet)).toBe(1)
@@ -312,14 +312,14 @@ import { layered_deep_equal } from "../Equality"
       const testFunc = () => {};
       expect(is_procedure_with_sticky_note(testFunc)).toBe(false);
   
-      const stickyFunc = stick(testFunc, () => ({} as LayeredObject));
+      const stickyFunc = stick(testFunc, () => ({} as LayeredObject<any>));
       expect(is_procedure_with_sticky_note(stickyFunc)).toBe(true);
     });
   
     // Test add_sticky_note and retrieve_layers
     it('add_sticky_note and retrieve_layers should work correctly', () => {
       const testFunc = () => {};
-      const layeredObject = {} as LayeredObject;
+      const layeredObject = {} as LayeredObject<any>;
   
       add_sticky_note(testFunc, layeredObject);
       expect(retrieve_layers(testFunc)).toBe(layeredObject);

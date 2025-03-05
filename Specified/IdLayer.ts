@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const id_layer = make_annotation_layer("id", (get_name: () => string, 
                                                     has_value: (object: any) => boolean,
                                                     get_value: (object: any) => any,
-                                                    is_equal: (a: LayeredObject, b: LayeredObject) => boolean): Layer => {
+                                                    is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {
 
     function get_default_value(): any {
         return construct_better_set([], (a: string) => to_string(a))
@@ -24,7 +24,7 @@ export const id_layer = make_annotation_layer("id", (get_name: () => string,
         return ["id"]
     }
 
-    function summarize_value(object: LayeredObject): string[]{
+    function summarize_value(object: LayeredObject<any>): string[]{
         return [get_value(object)]
     }
 
@@ -41,7 +41,7 @@ export const id_layer = make_annotation_layer("id", (get_name: () => string,
     }
 })
 
-export function has_id_layer(a: LayeredObject): boolean {
+export function has_id_layer(a: LayeredObject<any>): boolean {
     return id_layer.has_value(a)
 }
 
