@@ -7,14 +7,14 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { construct_layer_ui, type LayeredObject } from "./Basic/LayeredObject"
 
 
-const stickyNoteMap = new Map<any, LayeredObject>();
+const stickyNoteMap = new Map<any, LayeredObject<any>>();
 
 
 export function is_procedure_with_sticky_note(procedure: any): boolean {
     return stickyNoteMap.has(procedure)
 } 
 
-export function stick(procedure: (...args: any[]) => any, sticky_note: (obj: any) => LayeredObject): (...args: any[]) => any {
+export function stick(procedure: (...args: any[]) => any, sticky_note: (obj: any) => LayeredObject<any>): (...args: any[]) => any {
     if (is_procedure_with_sticky_note(procedure)) {
         const obj = retrieve_layers(procedure)
         add_sticky_note(obj, sticky_note(obj))
@@ -26,11 +26,11 @@ export function stick(procedure: (...args: any[]) => any, sticky_note: (obj: any
     return procedure
 }
 
-export function add_sticky_note(procedure: any, layeredObject: LayeredObject): any {
+export function add_sticky_note(procedure: any, layeredObject: LayeredObject<any>): any {
     stickyNoteMap.set(procedure, layeredObject);
     return procedure;
 }
 
-export function retrieve_layers(procedure: any): LayeredObject | undefined {
+export function retrieve_layers(procedure: any): LayeredObject<any> | undefined {
     return stickyNoteMap.get(procedure);
 }

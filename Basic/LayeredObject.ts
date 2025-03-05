@@ -135,8 +135,8 @@ export function get_annotation_layers(obj: any | LayeredObject<any>): BetterSet<
     }
 }
 
-export function construct_layer_ui<T>(layer: Layer<any>, value_constructor: (base_value: T, ...values: any[]) => T, merge: (new_value: T, old_values: T) => T): (maybeObj: LayeredObject<T> | any, ...updates: any[]) => LayeredObject<T>{ 
-    return (maybeObj: LayeredObject<T> | any, ...updates: any[]): LayeredObject<T> => {
+export function construct_layer_ui<T>(layer: Layer<T>, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): (maybeObj: LayeredObject<any> | any, ...updates: any[]) => LayeredObject<any>{ 
+    return (maybeObj: LayeredObject<any> | any, ...updates: any[]): LayeredObject<any> => {
       
         if (is_layered_object(maybeObj)){
             const layered_object : LayeredObject<T> = maybeObj
