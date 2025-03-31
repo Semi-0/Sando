@@ -2,7 +2,8 @@ import { register_predicate } from "generic-handler/Predicates";
 
 import { base_layer, get_base_value, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, map_to_same_set, get_length, has, find, filter, flat_map, to_array, add_item, is_better_set, get, map_to_new_set } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, map_to_same_set, set_get_length, set_has, set_find, set_filter, set_flat_map, to_array, set_add_item, is_better_set, get, map_to_new_set } from "generic-handler/built_in_generics/generic_better_set";
+
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { pipe } from "fp-ts/lib/function";
 import { is_bundled_obj } from "./Bundle";
@@ -26,7 +27,7 @@ export const is_pair = register_predicate("is_pair", (a: any): a is [any, any] =
 })
 
 export const every = register_predicate("every", (predicate: (a: any) => boolean, set: BetterSet<any>): boolean => {
-    return get_length(filter(set, predicate)) === get_length(set)
+    return set_get_length(set_filter(set, predicate)) === set_get_length(set)
 })
 
 export function get_alist_pair_name(pair: [Layer<any>, any]): string{
@@ -65,11 +66,11 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
 
     guard(is_layered_alist(_alist), throw_error("construct_layered_object", "Alist is not a layered alist", typeof _alist))
 
-    const alist = add_item(_alist, [base_layer(), base_value])
+    const alist = set_add_item(_alist, [base_layer(), base_value])
 
  
     function has_layer(layer: Layer<any>): boolean {
-        return has(alist, make_template(layer));
+        return set_has(alist, make_template(layer));
     }
 
     function get_layer_value(layer: Layer<any>): any | undefined {
@@ -79,7 +80,7 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
     function update_layer(layer: Layer<any>, value: any): LayeredObject<T>{
         guard(!has_layer(layer), () => console.log("update_layer: layer already exists, layer: " + summarize_self()))
 
-        return construct_layered_object(base_value, add_item(alist, [layer, value]))
+        return construct_layered_object(base_value, set_add_item(alist, [layer, value]))
     }
     
 
@@ -91,7 +92,7 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
 
         return pipe(alist, 
             (s: BetterSet<[Layer<any>, any]>) => map_to_new_set(s, (v: [Layer<any>, any]) => {return v[0]}, get_layer_name),
-            (s: BetterSet<Layer<any>>) => filter(s, (layer: Layer<any>) => !is_base_layer(layer))
+            (s: BetterSet<Layer<any>>) => set_filter(s, (layer: Layer<any>) => !is_base_layer(layer))
         )
     }
 

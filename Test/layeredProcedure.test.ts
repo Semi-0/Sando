@@ -1,4 +1,4 @@
-import { add, construct_better_set, get_length, merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { set_add_item, construct_better_set, set_get_length, set_merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { get_support_layer_value, support_by, support_layer } from "../Specified/SupportLayer"
 
 import { get_base_value } from "../Basic/Layer"
@@ -60,7 +60,7 @@ describe("test support layer operation", () => {
         const merge_support_string =  make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b)
 
         define_layered_procedure_handler(merge_support_string, support_layer, (base_layer: number, a: BetterSet<string>, b: BetterSet<string>) => {
-            return pipe(merge(a, b, a.identify_by), (s: BetterSet<string>) => add(s, to_string(base_layer)))
+            return pipe(set_merge(a, b, a.identify_by), (s: BetterSet<string>) => set_add_item(s, to_string(base_layer)))
         })
         const obj3 = merge_support_string(obj, obj2)
 
@@ -80,7 +80,7 @@ describe("test support layer operation", () => {
         const merge_support_string = make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b);
         
         define_layered_procedure_handler(merge_support_string, support_layer, (base_layer: number, a: BetterSet<string>, b: BetterSet<string>) => {
-            return pipe(merge(a, b, a.identify_by), (s: BetterSet<string>) => add(s, to_string(base_layer)));
+            return pipe(set_merge(a, b, a.identify_by), (s: BetterSet<string>) => set_add_item(s, to_string(base_layer)));
         });
     
         const obj1 = support_by(1, "test1");
@@ -201,7 +201,7 @@ describe("test id layer operations", () => {
         const obj: LayeredObject<any> = mark_id(1)
         expect(has_id_layer(obj)).toBe(true)
         const idSet: BetterSet<string> = get_id_layer_value(obj)
-        expect(get_length(idSet)).toBe(1)
+        expect(set_get_length(idSet)).toBe(1)
         const id = to_array(idSet)[0]
         expect(typeof id).toBe("string")
         expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/) // UUID v4 format
@@ -215,7 +215,7 @@ describe("test id layer operations", () => {
 
         expect(get_base_value(result)).toBe(3)
         const idSet = get_id_layer_value(result)
-        expect(get_length(idSet)).toBe(2)
+        expect(set_get_length(idSet)).toBe(2)
     })
 
     it("should keep unique ids when merging multiple times", () => {
@@ -227,7 +227,7 @@ describe("test id layer operations", () => {
 
         expect(get_base_value(result)).toBe(6)
         const idSet = get_id_layer_value(result)
-        expect(get_length(idSet)).toBe(3)
+        expect(set_get_length(idSet)).toBe(3)
     })
 })
 
@@ -379,8 +379,8 @@ describe('test multiple layers', () => {
   });
 
   it('should handle id layer correctly', () => {
-    expect(get_length(get_id_layer_value(obj))).toBe(1);
-    expect(get_length(get_id_layer_value(obj2))).toBe(1);
+    expect(set_get_length(get_id_layer_value(obj))).toBe(1);
+    expect(set_get_length(get_id_layer_value(obj2))).toBe(1);
   });
 
   it('should handle log layer correctly', () => {
@@ -395,7 +395,7 @@ describe('test multiple layers', () => {
     expect(to_array(get_support_layer_value(result)).sort()).toEqual(["support", "support2"]);
     expect(get_error_layer_value(result).map((e: any) => e.get_error())).toEqual(["error", "error2"]);
     expect(get_time_layer_value(result).timestamp).toBe(2000);
-    expect(get_length(get_id_layer_value(result))).toBe(2);
+    expect(set_get_length(get_id_layer_value(result))).toBe(2);
     expect(get_log_layer_value(result).map((l: any) => l.get_message())).toEqual(["log", "log2"]);
   });
 });

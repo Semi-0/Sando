@@ -1,7 +1,7 @@
 import { get_base_value } from "./Basic/Layer"
 import { is_layered_object, type LayeredObject } from "./Basic/LayeredObject"
 import { type Layer } from "./Basic/Layer"
-import { get_length, filter, set_some, set_every } from "generic-handler/built_in_generics/generic_better_set"
+import { set_get_length, set_some, set_every } from "generic-handler/built_in_generics/generic_better_set"
 
 export function layered_base_equal<T>(value1: any | LayeredObject<T>, value2: any | LayeredObject<T>): boolean{
     return get_base_value(value1) === get_base_value(value2)
@@ -50,7 +50,7 @@ export function layered_deep_equal<T>(value1: LayeredObject<T>, value2: LayeredO
     const layers2 = value2.annotation_layers()
   
     // Compare number of layers
-    if (get_length(layers1) !== get_length(layers2)) {
+    if (set_get_length(layers1) !== set_get_length(layers2)) {
         return false;
     }
 

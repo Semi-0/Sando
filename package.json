@@ -1,6 +1,6 @@
 {
   "name": "sando-layer",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -12,7 +12,7 @@
   "dependencies": {
     "@types/uuid": "^10.0.0",
     "fp-ts": "^2.16.9",
-    "generic-handler": "0.3.6",
+    "generic-handler": "0.3.16",
     "uuid": "^10.0.0"
   }
 }

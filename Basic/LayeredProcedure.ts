@@ -4,7 +4,7 @@ import {  base_layer, get_layer_name, is_layer, type Layer } from "./Layer"
 import { construct_layered_object, get_alist_pair_name, get_annotation_layers, type LayeredObject } from "./LayeredObject"
 import { pipe } from "fp-ts/lib/function"
 import { map, reduce } from "generic-handler/built_in_generics/generic_array_operation"
-import { add_item, construct_better_set, filter, find, is_better_set, map_to_new_set, merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { set_add_item, construct_better_set, set_filter, set_find, is_better_set, map_to_new_set, set_merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { register_predicate } from "generic-handler/Predicates";
 import { is_bundled_obj } from "./Bundle";
 
@@ -34,12 +34,12 @@ export function construct_layered_procedure_metadata(name: string, arity: number
     }
 
     function set_handler(name: string, handler: (b: any, ...v: any) => any): void {
-        handlers = add_item(handlers, [name, handler]);
+        handlers = set_add_item(handlers, [name, handler]);
     }
 
     function get_handler(layer: Layer<any>): ((b: any, ...v: any) => any) | undefined {
         const layerName = layer.get_name();
-        const handler = find(handlers, ([name, _]) => name === layerName);
+        const handler = set_find(([name, _]) => name === layerName, handlers);
         if (handler) {
             return handler[1];
         } else {
@@ -117,7 +117,7 @@ function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...ar
         const annotation_layers : BetterSet<Layer<any>> =  reduce(args.map((a: LayeredObject<any>) => get_annotation_layers(a)),
 
             (a: BetterSet<Layer<any>>, b: BetterSet<Layer<any>>) => {
-                return merge<Layer<any>>(a, b, get_layer_name)
+                return set_merge<Layer<any>>(a, b, get_layer_name)
             }, construct_better_set([], get_layer_name)
         );
 
@@ -129,7 +129,7 @@ function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...ar
                     const handler = metaData.get_handler(layer); 
                     return [layer, handler ? handler(base_value, ...args.map(a => layer.get_value(a))) : undefined];
                 }, get_alist_pair_name), 
-                (s: BetterSet<[Layer<any>, any]>) => filter(s, ([_, value]) => value !== undefined)
+                (s: BetterSet<[Layer<any>, any]>) => set_filter(s, ([_, value]) => value !== undefined)
             )
     );
  };
