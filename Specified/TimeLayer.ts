@@ -1,9 +1,10 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler, error_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer";
-import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
+import { type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, register_predicate } from "generic-handler/Predicates";
 import { timestamp_to_ordinary_time } from "../utility";
+import { construct_layered_datum } from "../Basic/LayeredDatum";
 
 export interface TimeStampedValue {
     value: any;
@@ -34,7 +35,7 @@ define_generic_procedure_handler(merge_timestamped_value, all_match(is_timestamp
 export const time_layer = make_annotation_layer("time", (get_name: () => string, 
                                                          has_value: (object: any) => boolean,
                                                          get_value: (object: any) => any,
-                                                         is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {  
+                                                         summarize_self: () => string[]): Layer<any> => {  
     function get_default_value(): TimeStampedValue {
         return { value: undefined, timestamp: 0 };
     }
@@ -43,23 +44,15 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         return default_merge_procedure(merge_timestamped_value, get_default_value());
     }
 
-    function summarize_self(): string[] {
-        return ["time"];
-    }
 
-    function summarize_value(object: LayeredObject<any>): string[]{
-        return [get_value(object)]
-    }
+
     return {
-        identifier: "layer",
         get_name,
         has_value,
         get_value,
         get_default_value,
         get_procedure,
         summarize_self,
-        summarize_value,
-        is_equal
     };
 });
 
@@ -73,12 +66,6 @@ export function construct_time_value(base_value: any, timestamp?: number): TimeS
     return make_timestamped_value(base_value, timestamp);
 }
 
-export const annotate_time = construct_layer_ui(
-    time_layer,
-    construct_time_value,
-    (new_value: TimeStampedValue, old_value: TimeStampedValue) => {
-        return merge_timestamped_value(new_value, old_value);
-    }
-);
+export const annotate_time = (base_value: any, timestamp?: number) => construct_layered_datum(base_value, time_layer, construct_time_value(base_value, timestamp));
 
 export const annotate_now = (base_value: any) => annotate_time(base_value, Date.now());

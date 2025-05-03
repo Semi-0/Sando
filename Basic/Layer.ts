@@ -4,21 +4,26 @@ import { andExecute } from "generic-handler/built_in_generics/generic_combinator
 import { is_layered_object, type LayeredObject } from "./LayeredObject"
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper"
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
-import { deep_equal } from "../Equality"
+
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
+import { construct_better_set, set_merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 
 export interface Layer<T>{
-    identifier: string
     get_name(): string
     has_value(object: LayeredObject<any>): boolean
     get_value(object: LayeredObject<any>): any
     get_default_value(): any 
     summarize_self(): string[]
-    get_procedure(name: string, arity: number): any | undefined,
-    summarize_value(object: LayeredObject<any>): string[]
-    is_equal(a: any | LayeredObject<any>, b: any | LayeredObject<any>): boolean
-
+    get_procedure(name: string, arity: number): any ,
 }
+
+export const is_layer = register_predicate("is_layer", (value: any): value is Layer<any> => {
+    return value != undefined && value != null && 
+    value.has_value != undefined && 
+    value.get_value != undefined &&
+    value.summarize_self != undefined &&
+    value.get_procedure != undefined
+})
 
 
 export function get_layer_name(layer: Layer<any> | string): string{
@@ -54,22 +59,13 @@ export function base_layer<T>(): Layer<T>{
         throw new Error("base_layer: get_procedure not implemented")
     }
 
-    function summarize_value(object: LayeredObject<any>): string[]{
-        return [to_string(get_value(object))]
-    }
-
-
-
     return {
-        identifier: "layer",
         get_name,
         has_value,
         get_value,
         summarize_self,
         get_default_value,
         get_procedure,
-        summarize_value,
-        is_equal: (a: any, b: any) => get_base_value(a) === get_base_value(b)
     }
 }
 
@@ -81,7 +77,7 @@ export function make_annotation_layer<T, A>(name: string,
                                       constructor: (get_name: () => string, 
                                                     has_value: (object: LayeredObject<A>) => boolean,
                                                     get_value: (object: LayeredObject<A>) => A,
-                                                    is_equal: (a: LayeredObject<A>, b: LayeredObject<A>) => boolean) => Layer<A>): Layer<T>{                          
+                                                    summarize_self: () => string[]) => Layer<A>): Layer<T>{                          
  
     function get_name(): string{
         return name
@@ -95,14 +91,33 @@ export function make_annotation_layer<T, A>(name: string,
         return has_value(object) ? object.get_layer_value(layer) : layer.get_default_value()
     }
 
-    function is_equal(a:  LayeredObject<A>, b: LayeredObject<A>): boolean{
-        return deep_equal(get_value(a), get_value(b))
+    function summarize_self(): string[]{
+        return [get_name()]
     }
 
-    const layer = constructor(get_name, has_value, get_value, is_equal)
+    const layer = constructor(get_name, has_value, get_value, summarize_self)
 
     return layer
 }
+
+export function make_unprocedural_layer<T>(name: string, get_default_value: () => T): Layer<T>{
+    return make_annotation_layer(name, (get_name, has_value, get_value, summarize_self) => {
+        return {
+            get_name,
+            has_value,
+            get_value, 
+            get_default_value,
+            summarize_self,
+            get_procedure: () => undefined
+        }
+    })
+}
+
+export const construct_layers_set = (...layers: Layer<any>[]) => construct_better_set(layers, get_layer_name)
+
+export const construct_empty_layers_set = () => construct_layers_set()
+
+export const layers_set_merge = (a: BetterSet<Layer<any>>, b: BetterSet<Layer<any>>) => set_merge(a, b, get_layer_name)
 
 
 export function layer_accessor<T>(layer: Layer<T>){
@@ -113,9 +128,7 @@ export function layer_accessor<T>(layer: Layer<T>){
 
 export const get_base_value = layer_accessor(base_layer())
 
-export const is_layer = register_predicate("is_layer", (value: any): value is Layer<any> => {
-    return is_bundled_obj("layer")(value)
-})
+
 
 // export function is_layer(value: any): value is Layer{
 //     return value instanceof Layer

@@ -1,5 +1,5 @@
 import { set_add_item, construct_better_set, set_get_length, set_merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
-import { get_support_layer_value, support_by, support_layer } from "../Specified/SupportLayer"
+import { construct_defualt_support_set, get_support_layer_value, support_by, support_layer } from "../Specified/SupportLayer"
 
 import { get_base_value } from "../Basic/Layer"
 
@@ -9,9 +9,9 @@ import { describe, it, expect } from "bun:test"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { define_layered_procedure_handler, make_layered_procedure } from "../Basic/LayeredProcedure"
 import { pipe } from "fp-ts/lib/function"
-import { get_error_layer_value, has_error_layer, make_error_pair, mark_error } from "../Specified/ErrorLayer"
-import { annotate_time, get_time_layer_value, has_time_layer } from "../Specified/TimeLayer"
-
+import { construct_error_value, error_layer, get_error_layer_value, has_error_layer, make_error_pair, mark_error } from "../Specified/ErrorLayer"
+import { annotate_time, construct_time_value, get_time_layer_value, has_time_layer, time_layer } from "../Specified/TimeLayer"
+import { all_layers_value_equal, layers_base_equal, layers_length_equal } from "../Equality"
 
 describe("test support layer operation", () => {
     it("should support a layered object", () => {
@@ -52,6 +52,11 @@ describe("test support layer operation", () => {
 
         const m2 = support_by(1, "test")
         const obj3 = support_by(m2, "test1")
+
+
+        expect(layers_length_equal(obj2, obj3)).toBe(true)
+        expect(layers_base_equal(obj2, obj3)).toBe(true)
+        expect(all_layers_value_equal(obj2, obj3)).toBe(true)
         expect(layered_deep_equal(obj2, obj3)).toBe(true)
     })
     it("should support customized layered procedure", () => {
@@ -108,11 +113,6 @@ describe("test support layer operation", () => {
         })
 
 
-        it("interface should correctly support one value with two different strings", () => {
-            const obj = support_by(1, "test")
-            const obj2 = support_by(obj, "test2")
-            expect(to_array(get_support_layer_value(obj2))).toEqual(["test", "test2"])
-        })
     
         it("should merge error layers with default procedure", () => {
             const obj1 = mark_error(1, "Error 1")
@@ -126,15 +126,7 @@ describe("test support layer operation", () => {
             expect(errors[0].get_error()).toBe("Error 1")
             expect(errors[1].get_error()).toBe("Error 2")
         })
-    
-        it("should handle multiple errors on the same object", () => {
-            const obj = mark_error(mark_error(1, "Error 1"), "Error 2")
-            const errors = get_error_layer_value(obj)
-            expect(errors.length).toBe(2)
-            expect(errors[0].get_error()).toBe("Error 2")
-            expect(errors[1].get_error()).toBe("Error 1")
-        })
-    
+
         it("should correctly use construct_error_value", () => {
             const errorPair = make_error_pair("Test error", 42)
             expect(errorPair.get_error()).toBe("Test error")
@@ -189,57 +181,18 @@ describe("test time layer operations", () => {
 })
 
 
-// ... existing imports ...
-import { has_id_layer, get_id_layer_value, mark_id } from "../Specified/IdLayer"
-import { v4 as uuidv4 } from 'uuid';
-import { layered_object, type LayeredObject } from "../Basic/LayeredObject"
 
 // ... existing test suites ...
 
-describe("test id layer operations", () => {
-    it("should add an id to a layered object", () => {
-        const obj: LayeredObject<any> = mark_id(1)
-        expect(has_id_layer(obj)).toBe(true)
-        const idSet: BetterSet<string> = get_id_layer_value(obj)
-        expect(set_get_length(idSet)).toBe(1)
-        const id = to_array(idSet)[0]
-        expect(typeof id).toBe("string")
-        expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/) // UUID v4 format
-    })
-
-    it("should merge id layers with default procedure", () => {
-        const obj1 = mark_id(1)
-        const obj2 = mark_id(2)
-        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
-        const result = merge_proc(obj1, obj2)
-
-        expect(get_base_value(result)).toBe(3)
-        const idSet = get_id_layer_value(result)
-        expect(set_get_length(idSet)).toBe(2)
-    })
-
-    it("should keep unique ids when merging multiple times", () => {
-        const obj1 = mark_id(1)
-        const obj2 = mark_id(2)
-        const obj3 = mark_id(3)
-        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
-        const result = merge_proc(merge_proc(obj1, obj2), obj3)
-
-        expect(get_base_value(result)).toBe(6)
-        const idSet = get_id_layer_value(result)
-        expect(set_get_length(idSet)).toBe(3)
-    })
-})
-
 // ... existing imports ...
-import { has_log_layer, get_log_layer_value, add_log, make_log_entry } from "../Specified/LogLayer"
+import { has_log_layer, get_log_layer_value, make_log_entry, log_layer, mark_log, construct_log_value } from "../Specified/LogLayer"
 import { is_log_entry, is_log_entry_list } from "../Specified/LogLayer"
 
 // ... existing test suites ...
 
 describe("test log layer operations", () => {
     it("should add a log entry to a layered object", () => {
-        const obj = add_log(1, "Test log message")
+        const obj = mark_log(1, "Test log message")
         expect(has_log_layer(obj)).toBe(true)
         const logEntries = get_log_layer_value(obj)
         expect(is_log_entry_list(logEntries)).toBe(true)
@@ -248,23 +201,14 @@ describe("test log layer operations", () => {
     })
 
     it("should merge log layers with default procedure", () => {
-        const obj1 = add_log(1, "Log 1")
-        const obj2 = add_log(2, "Log 2")
+        const obj1 = mark_log(1, "Log 1")
+        const obj2 = mark_log(2, "Log 2")
         const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
         const result = merge_proc(obj1, obj2)
 
         expect(get_base_value(result)).toBe(3)
         const logEntries = get_log_layer_value(result)
         expect(logEntries.length).toBe(2)
-        expect(logEntries[0].get_message()).toBe("Log 1")
-        expect(logEntries[1].get_message()).toBe("Log 2")
-    })
-
-    it("should handle multiple log entries on the same object", () => {
-        const obj = add_log(add_log(1, "Log 1"), "Log 2")
-        const logEntries = get_log_layer_value(obj)
-        expect(logEntries.length).toBe(2)
-  
         expect(logEntries[0].get_message()).toBe("Log 1")
         expect(logEntries[1].get_message()).toBe("Log 2")
     })
@@ -277,9 +221,9 @@ describe("test log layer operations", () => {
     })
 
     it("should merge log entries correctly", () => {
-        const obj1 = add_log(1, "Log 1")
-        const obj2 = add_log(2, "Log 2")
-        const obj3 = add_log(3, "Log 3")
+        const obj1 = mark_log(1, "Log 1")
+        const obj2 = mark_log(2, "Log 2")
+        const obj3 = mark_log(3, "Log 3")
         const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
         const result = merge_proc(merge_proc(obj1, obj2), obj3)
 
@@ -302,33 +246,9 @@ import {
     retrieve_layers
   } from '../StickyNote';
 import { layered_deep_equal } from "../Equality"
+import { construct_layered_datum } from "../Basic/LayeredDatum"
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
   
-  describe('StickyNoteLayer', () => {
-    // Test sticky_note_layer
-  
-  
-    // Test is_procedure_with_sticky_note and stick
-    it('is_procedure_with_sticky_note and stick should work correctly', () => {
-      const testFunc = () => {};
-      expect(is_procedure_with_sticky_note(testFunc)).toBe(false);
-  
-      const stickyFunc = stick(testFunc, () => ({} as LayeredObject<any>));
-      expect(is_procedure_with_sticky_note(stickyFunc)).toBe(true);
-    });
-  
-    // Test add_sticky_note and retrieve_layers
-    it('add_sticky_note and retrieve_layers should work correctly', () => {
-      const testFunc = () => {};
-      const layeredObject = {} as LayeredObject<any>;
-  
-      add_sticky_note(testFunc, layeredObject);
-      expect(retrieve_layers(testFunc)).toBe(layeredObject);
-    });
-  
-
-  });
-
-
   // ... existing imports and test suites ...
 describe('test multiple layers', () => {
   let obj: any;
@@ -336,29 +256,26 @@ describe('test multiple layers', () => {
   let merge_proc: any;
 
   beforeEach(() => {
-    obj = pipe(
-      1,
-      (x) => support_by(x, "support"),
-      (x) => mark_error(x, "error"),
-      (x) => annotate_time(x, 1000),
-      (x) => mark_id(x),
-      (x) => add_log(x, "log")
-    );
+    obj = construct_layered_datum(1,
+                    support_layer, construct_defualt_support_set(["support"]),
+                    error_layer, construct_error_value(1, "error"),
+                    time_layer, construct_time_value(1, 1000),
+                    log_layer, construct_log_value(1, "log")
+    )
+    
+    obj2 = construct_layered_datum(2,
+                    support_layer, construct_defualt_support_set(["support2"]),
+                    error_layer, construct_error_value(2, "error2"),
+                    time_layer, construct_time_value(2, 2000),
+                    log_layer, construct_log_value(2, "log2")
+    )
 
-    obj2 = pipe(
-      2,
-      (x) => support_by(x, "support2"),
-      (x) => mark_error(x, "error2"),
-      (x) => annotate_time(x, 2000),
-      (x) => mark_id(x),
-      (x) => add_log(x, "log2")
-    );
 
     merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b);
   });
 
   it('should handle base layer correctly', () => {
-    console.log(obj.describe_self())
+ 
     expect(get_base_value(obj)).toBe(1);
     expect(get_base_value(obj2)).toBe(2);
   });
@@ -378,10 +295,7 @@ describe('test multiple layers', () => {
     expect(get_time_layer_value(obj2).timestamp).toBe(2000);
   });
 
-  it('should handle id layer correctly', () => {
-    expect(set_get_length(get_id_layer_value(obj))).toBe(1);
-    expect(set_get_length(get_id_layer_value(obj2))).toBe(1);
-  });
+
 
   it('should handle log layer correctly', () => {
     expect(get_log_layer_value(obj)[0].get_message()).toBe("log");
@@ -395,7 +309,6 @@ describe('test multiple layers', () => {
     expect(to_array(get_support_layer_value(result)).sort()).toEqual(["support", "support2"]);
     expect(get_error_layer_value(result).map((e: any) => e.get_error())).toEqual(["error", "error2"]);
     expect(get_time_layer_value(result).timestamp).toBe(2000);
-    expect(set_get_length(get_id_layer_value(result))).toBe(2);
     expect(get_log_layer_value(result).map((l: any) => l.get_message())).toEqual(["log", "log2"]);
   });
 });

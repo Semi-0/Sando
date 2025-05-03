@@ -1,10 +1,11 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler, error_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer";
-import { construct_layer_ui, type LayeredObject } from "../Basic/LayeredObject";
+import {  type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_layered_procedure_handler } from "../Basic/LayeredProcedure";
+import { construct_layered_datum } from "../Basic/LayeredDatum";
 
 
 export interface ErrorPair{
@@ -72,7 +73,7 @@ define_generic_procedure_handler(merge_error_pair, match_args(is_error_pair_list
 export const error_layer = make_annotation_layer("error", (get_name: () => string, 
                                                            has_value: (object: any) => boolean,
                                                            get_value: (object: any) => any,
-                                                           is_equal: (a: LayeredObject<any>, b: LayeredObject<any>) => boolean): Layer<any> => {  
+                                                           summarize_self: () => string[]): Layer<any> => {  
     function get_default_value(): any{
         return []
     }
@@ -82,28 +83,19 @@ export const error_layer = make_annotation_layer("error", (get_name: () => strin
         merge_error_pair, [])
     }
 
-    function summarize_self(): string[]{
-        return ["error"]
-    }
 
-    function describe(object: LayeredObject<any>): string[]{
-        return get_value(object)
-    }
 
     function summarize_value(object: LayeredObject<any>): string[]{
         return [get_value(object).map((a: ErrorPair) => a.summarize_value()).join("\n")]
     }
 
     return {
-        identifier: "layer",
         get_name,
         has_value,
         get_value,
         get_default_value,
         get_procedure,
         summarize_self,
-        summarize_value,
-        is_equal
     }
 })
 
@@ -117,11 +109,6 @@ export function construct_error_value(base_value: any, error: string): ErrorPair
     return [make_error_pair(error, base_value)]
 }
 
-export const mark_error = construct_layer_ui(
-    error_layer,
-    construct_error_value,
-    (new_value: any, old_values: any) => {
-        return merge_error_pair(new_value, old_values)
-    }
-)
 
+
+export const mark_error = (base_value: any, error: string) => construct_layered_datum(base_value, error_layer, construct_error_value(base_value, error))

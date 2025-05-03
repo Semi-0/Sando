@@ -1,8 +1,8 @@
-import { register_predicate } from "generic-handler/Predicates";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 
-import { base_layer, get_base_value, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
+import { base_layer, construct_empty_layers_set, get_base_value, get_layer_name, is_base_layer, is_layer, type Layer } from "./Layer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, map_to_same_set, set_get_length, set_has, set_find, set_filter, set_flat_map, to_array, set_add_item, is_better_set, get, map_to_new_set } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, map_to_same_set, set_get_length, set_has, set_find, set_filter, set_flat_map, to_array, set_add_item, is_better_set, get, map_to_new_set, set_every, set_map } from "generic-handler/built_in_generics/generic_better_set";
 
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { pipe } from "fp-ts/lib/function";
@@ -10,13 +10,17 @@ import { is_bundled_obj } from "./Bundle";
 import { is_array, is_null } from "generic-handler/built_in_generics/generic_predicates";
 import { map_to_array } from "../utility";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
+import { first } from "generic-handler/built_in_generics/generic_array_operation";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+
+
 
 export interface LayeredObject<T> {
-    identifier: string;
-    alist: BetterSet<Layer<any>>;
+    alist: BetterSet<[Layer<any>, any]>;
     has_layer(layer: Layer<any>): boolean;
     get_layer_value(layer: Layer<any>): any | undefined;
-    update_layer(layer: Layer<any>, value: any): LayeredObject<T>;
     annotation_layers(): BetterSet<Layer<any>>;
     summarize_self(): string[]; 
     describe_self(): string;
@@ -31,7 +35,10 @@ export const every = register_predicate("every", (predicate: (a: any) => boolean
 })
 
 export function get_alist_pair_name(pair: [Layer<any>, any]): string{
-    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", typeof pair))
+    // console.log(is_layer(pair[0]))
+    // console.log(pair[1])
+    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", to_string(pair)))
+   
     return pair[0].get_name()
 }
 
@@ -57,11 +64,6 @@ export function assv(template_layer: Layer<any>, alist: BetterSet<[Layer<any>, a
     return item
 }
 
-export function layered_object<T>(base_layer: any, ...plist: [Layer<any>, any][]): LayeredObject<T>{
-    return construct_layered_object(base_layer, make_layered_alist(plist))
-}
-
-
 export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any> ): LayeredObject<T> {
 
     guard(is_layered_alist(_alist), throw_error("construct_layered_object", "Alist is not a layered alist", typeof _alist))
@@ -73,8 +75,13 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
         return set_has(alist, make_template(layer));
     }
 
-    function get_layer_value(layer: Layer<any>): any | undefined {
-        return assv(layer, alist)?.[1]
+    function get_layer_value(layer: Layer<any>): any  {
+        try{
+            return assv(layer, alist)[1]
+        }
+        catch(e){
+            throw_error("get_layer_value", "Layer not found", layer.get_name())
+        }
     }
 
     function update_layer(layer: Layer<any>, value: any): LayeredObject<T>{
@@ -82,18 +89,9 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
 
         return construct_layered_object(base_value, set_add_item(alist, [layer, value]))
     }
-    
-
 
     function annotation_layers(): BetterSet<Layer<any>> {
-        // remove the last element because it is the base layer
-        // TODO!!!: if the original map is fixed the
-        // const result = map_to_new_set(alist, (v: [Layer, any]) => {return v[0]}, get_layer_name)
-
-        return pipe(alist, 
-            (s: BetterSet<[Layer<any>, any]>) => map_to_new_set(s, (v: [Layer<any>, any]) => {return v[0]}, get_layer_name),
-            (s: BetterSet<Layer<any>>) => set_filter(s, (layer: Layer<any>) => !is_base_layer(layer))
-        )
+        return map_to_new_set<any, Layer<any>>(alist, first, get_layer_name)
     }
 
     function summarize_self(): string[]{
@@ -105,7 +103,7 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
         //@ts-ignore
    
         return [base_layer_description, ...map_to_array(annotation_layers(), (layer: Layer) => {
-            return layer.get_name() + " layer: " + layer.summarize_value(self)
+            return layer.get_name() + " layer: " + to_string(layer.get_value(self))
         })].join("\n") 
     }
 
@@ -122,38 +120,22 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
     return self
 }
 
+export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<any>> => {
+    return is_layered_object(obj) ? obj.annotation_layers() : construct_empty_layers_set()
+}
+
 export const is_layered_object = register_predicate("is_layered_object", (a: any): a is LayeredObject<any> => {
     return is_bundled_obj("layered_object")(a)
 })
 
-export function get_annotation_layers(obj: any | LayeredObject<any>): BetterSet<Layer<any>>{
-    if (is_layered_object(obj)){
-        return obj.annotation_layers()
-    }
-    else{
-        //@ts-ignore
-        return construct_better_set([], get_layer_name)
-    }
-}
+define_generic_procedure_handler(to_string, match_args(is_layered_object), (obj: LayeredObject<any>): string => {
+     return (map_to_array(obj.annotation_layers(), (layer: Layer<any>) => {
+         return layer.get_name() + " layer: " + to_string(layer.get_value(obj))
+     }) as string[]).join("\n") 
+})
 
-export function construct_layer_ui<T>(layer: Layer<T>, value_constructor: (base_value: any, ...values: any[]) => any, merge: (new_value: any, old_values: any) => any): (maybeObj: LayeredObject<any> | any, ...updates: any[]) => LayeredObject<any>{ 
-    return (maybeObj: LayeredObject<any> | any, ...updates: any[]): LayeredObject<any> => {
-      
-        if (is_layered_object(maybeObj)){
-            const layered_object : LayeredObject<T> = maybeObj
-            const constructed_update = value_constructor(get_base_value(layered_object), ...updates)
-            if (layer.has_value(layered_object)){
-                return layered_object.update_layer(layer, merge(constructed_update, layered_object.get_layer_value(layer)))
-            } else {
-                return layered_object.update_layer(layer, constructed_update)
-            }
-        }
-        else{
-            const base : any = maybeObj
-            const constructed_update = value_constructor(base, ...updates)
-            return layered_object(base, [layer, constructed_update])
-        }   
-    }
-}
 
+export const layers_length = compose(get_annotation_layers, set_get_length)
+
+export const layers_every = (l: LayeredObject<any>, f: (v: any) => boolean) => set_every(get_annotation_layers(l), f)
 
