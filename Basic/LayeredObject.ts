@@ -37,7 +37,7 @@ export const every = register_predicate("every", (predicate: (a: any) => boolean
 export function get_alist_pair_name(pair: [Layer<any>, any]): string{
     // console.log(is_layer(pair[0]))
     // console.log(pair[1])
-    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", to_string(pair)))
+    guard(is_proper_pair(pair), throw_error("make_layered_alist", "Item is not a proper pair", typeof pair))
    
     return pair[0].get_name()
 }
