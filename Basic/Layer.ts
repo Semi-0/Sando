@@ -1,4 +1,4 @@
-import { register_predicate } from "generic-handler/Predicates"
+import { all_match, match_args, register_predicate } from "generic-handler/Predicates"
 import { is_bundled_obj } from "./Bundle"
 import { andExecute } from "generic-handler/built_in_generics/generic_combinator"
 import { is_layered_object, type LayeredObject } from "./LayeredObject"
@@ -6,7 +6,9 @@ import { guard, throw_error } from "generic-handler/built_in_generics/other_gene
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
-import { construct_better_set, set_merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, identify_by, set_merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
 
 export interface Layer<T>{
     get_name(): string
@@ -113,11 +115,18 @@ export function make_unprocedural_layer<T>(name: string, get_default_value: () =
     })
 }
 
-export const construct_layers_set = (...layers: Layer<any>[]) => construct_better_set(layers, get_layer_name)
+define_generic_procedure_handler(identify_by, match_args(is_layer), get_layer_name)
+
+
+define_generic_procedure_handler(is_equal, all_match(is_layer), (a: Layer<any>, b: Layer<any>) => {
+    return a.get_name() === b.get_name()
+})
+
+export const construct_layers_set = (...layers: Layer<any>[]) => construct_better_set(layers)
 
 export const construct_empty_layers_set = () => construct_layers_set()
 
-export const layers_set_merge = (a: BetterSet<Layer<any>>, b: BetterSet<Layer<any>>) => set_merge(a, b, get_layer_name)
+export const layers_set_merge = (a: BetterSet<Layer<any>>, b: BetterSet<Layer<any>>) => set_merge(a, b)
 
 
 export function layer_accessor<T>(layer: Layer<T>){

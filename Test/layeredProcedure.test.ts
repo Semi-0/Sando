@@ -1,8 +1,8 @@
-import { set_add_item, construct_better_set, set_get_length, set_merge, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, set_merge, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { construct_defualt_support_set, get_support_layer_value, support_by, support_layer } from "../Specified/SupportLayer"
-
+import { to_array, map, reduce, filter, add_item } from "generic-handler/built_in_generics/generic_collection"
 import { get_base_value } from "../Basic/Layer"
-
+import { trace_function } from "generic-handler/built_in_generics/generic_debugger"
 
 
 import { describe, it, expect } from "bun:test" 
@@ -65,7 +65,7 @@ describe("test support layer operation", () => {
         const merge_support_string =  make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b)
 
         define_layered_procedure_handler(merge_support_string, support_layer, (base_layer: number, a: BetterSet<string>, b: BetterSet<string>) => {
-            return pipe(set_merge(a, b, a.identify_by), (s: BetterSet<string>) => set_add_item(s, to_string(base_layer)))
+            return pipe(set_merge(a, b), (s: BetterSet<string>) => add_item(s, to_string(base_layer)))
         })
         const obj3 = merge_support_string(obj, obj2)
 
@@ -85,7 +85,7 @@ describe("test support layer operation", () => {
         const merge_support_string = make_layered_procedure("merge_support_string", 1, (a: any, b: any) => a + b);
         
         define_layered_procedure_handler(merge_support_string, support_layer, (base_layer: number, a: BetterSet<string>, b: BetterSet<string>) => {
-            return pipe(set_merge(a, b, a.identify_by), (s: BetterSet<string>) => set_add_item(s, to_string(base_layer)));
+            return pipe(set_merge(a, b), (s: BetterSet<string>) => add_item(s, to_string(base_layer)));
         });
     
         const obj1 = support_by(1, "test1");
@@ -118,8 +118,8 @@ describe("test support layer operation", () => {
             const obj1 = mark_error(1, "Error 1")
             const obj2 = mark_error(2, "Error 2")
             const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
-            const result = merge_proc(obj1, obj2)
-    
+            const result =   merge_proc(obj1, obj2)
+
             expect(get_base_value(result)).toBe(3)
             const errors = get_error_layer_value(result)
             expect(errors.length).toBe(2)
