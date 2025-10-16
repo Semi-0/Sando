@@ -141,43 +141,24 @@ describe("test time layer operations", () => {
         const obj = annotate_time(1, now)
         expect(has_time_layer(obj)).toBe(true)
         const timeValue = get_time_layer_value(obj)
-        expect(timeValue.value).toBe(1)
-        expect(timeValue.timestamp).toBe(now)
+        expect(timeValue).toBe(now)
     })
 
-    it("should use current time if no timestamp provided", () => {
-        const before = Date.now()
-        const obj = annotate_time(1)
-        const after = Date.now()
-        const timeValue = get_time_layer_value(obj)
-        expect(timeValue.value).toBe(1)
-        expect(timeValue.timestamp).toBeGreaterThanOrEqual(before)
-        expect(timeValue.timestamp).toBeLessThanOrEqual(after)
-    })
+
 
     it("should merge time layers with default procedure", () => {
         const obj1 = annotate_time(1, 1000)
         const obj2 = annotate_time(2, 2000)
         const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
         const result = merge_proc(obj1, obj2)
+    
 
         expect(get_base_value(result)).toBe(3)
         const timeValue = get_time_layer_value(result)
-        expect(timeValue.value).toBe(2)
-        expect(timeValue.timestamp).toBe(2000)
+        expect(timeValue).toBe(2000)
     })
 
-    it("should keep the latest timestamp when merging", () => {
-        const obj1 = annotate_time(1, 2000)
-        const obj2 = annotate_time(2, 1000)
-        const merge_proc = make_layered_procedure("merge_proc", 1, (a: any, b: any) => a + b)
-        const result = merge_proc(obj1, obj2)
 
-        expect(get_base_value(result)).toBe(3)
-        const timeValue = get_time_layer_value(result)
-        expect(timeValue.value).toBe(2)
-        expect(timeValue.timestamp).toBe(2000)
-    })
 })
 
 

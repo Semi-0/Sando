@@ -71,6 +71,8 @@ export function base_layer<T>(): Layer<T>{
     }
 }
 
+define_generic_procedure_handler(to_string, match_args(is_layer), layer => layer.get_name())
+
 export function is_base_layer<T>(layer: Layer<T>): boolean{
     return layer.get_name() === "base"
 }

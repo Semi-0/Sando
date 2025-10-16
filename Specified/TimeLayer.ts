@@ -6,30 +6,16 @@ import { all_match, register_predicate } from "generic-handler/Predicates";
 import { timestamp_to_ordinary_time } from "../utility";
 import { construct_layered_datum } from "../Basic/LayeredDatum";
 
-export interface TimeStampedValue {
-    value: any;
-    timestamp: number;
-}
-
-export function describe_timestamped_value(a: TimeStampedValue): string {
-    return "value:" + a.value + ", timestamp:" +  timestamp_to_ordinary_time(a.timestamp)
-}
-
-export function make_timestamped_value(value: any, timestamp: number = Date.now()): TimeStampedValue {
-    return { value, timestamp };
-}
+export type TimeStampedValue = number;
 
 export const is_timestamped_value = register_predicate("is_timestamped_value", (a: any): a is TimeStampedValue => {
-    return typeof a === "object" && "value" in a && "timestamp" in a && typeof a.timestamp === "number";
+    return typeof a === "number";
 });
 
 export const merge_timestamped_value = construct_simple_generic_procedure("merge_timestamped_value", 2, error_generic_procedure_handler("merge_timestamped_value"));
 
 define_generic_procedure_handler(merge_timestamped_value, all_match(is_timestamped_value), (a: TimeStampedValue, b: TimeStampedValue) => {
-    return {
-        value: b.value,
-        timestamp: Math.max(a.timestamp, b.timestamp)
-    };
+    return Math.max(a, b)
 });
 
 export const time_layer = make_annotation_layer("time", (get_name: () => string, 
@@ -37,7 +23,7 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
                                                          get_value: (object: any) => any,
                                                          summarize_self: () => string[]): Layer<any> => {  
     function get_default_value(): TimeStampedValue {
-        return { value: undefined, timestamp: 0 };
+        return 0;
     }
 
     function get_procedure(name: string, arity: number): any | undefined {
@@ -63,7 +49,7 @@ export function has_time_layer(a: LayeredObject<any>): boolean {
 export const get_time_layer_value = layer_accessor(time_layer);
 
 export function construct_time_value(base_value: any, timestamp?: number): TimeStampedValue {
-    return make_timestamped_value(base_value, timestamp);
+    return timestamp ?? 0;
 }
 
 export const annotate_time = (base_value: any, timestamp?: number) => construct_layered_datum(base_value, time_layer, construct_time_value(base_value, timestamp));
