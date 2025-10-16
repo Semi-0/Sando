@@ -1,6 +1,6 @@
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger"
 import { layers_reduce } from "./helper"
-import type { Layer } from "./Layer"
+import { is_base_layer, type Layer } from "./Layer"
 import type { LayeredObject } from "./LayeredObject"
 import { define_layered_procedure_handler, make_layered_procedure } from "./LayeredProcedure"
 
@@ -8,7 +8,7 @@ import { define_layered_procedure_handler, make_layered_procedure } from "./Laye
 // layered reducer is a reducer that reduce an layered object into a single value
 // maybe we should stored the metadata? 
 type LayeredProcedure = (...args: any[]) => LayeredObject<any>
-type LayeredReducer = (...objects: LayeredObject<any>[]) => any
+type LayeredReducer = (...objects: LayeredObject<any>[] | any[]) => any
 
 const metadata_store = new Map<LayeredReducer, LayeredProcedure>()
 
@@ -22,18 +22,26 @@ export const metadata_store_get = (procedure: LayeredReducer) => {
 
 export { metadata_store }
 
-export const construct_layered_consolidator = (name: string = "layered_reducer", arity: number = 1, reducer: (acc: any, initial: any) => any, initial: any) => {
+export const construct_layered_consolidator = (name: string = "layered_reducer", arity: number = 1, reducer: (acc: any[], n: any) => any, initial: any) => {
     const internal =  make_layered_procedure(name + "_dispatcher", arity, (...args: any[]) => args)
-    const the_procedure = (...objects: LayeredObject<any>[]) => {
-        const assessed_result = internal(objects)
+    const the_procedure = (...objects: LayeredObject<any>[] | any[]) => {
+        const assessed_result = internal(...objects)
         return layers_reduce(assessed_result,  reducer, initial)
     }
     metadata_store.set(the_procedure, internal)
     return the_procedure
 }
 
+export const exclude_base_layer = (f: (acc: any, layer_pair: [Layer<any>, any]) => any) => (acc: any, layer_pair: [Layer<any>, any]) => {
+    if (is_base_layer(layer_pair[0])) {
+        return acc;
+    }
+    return f(acc, layer_pair);
+}
 
-export const define_consolidator_per_layer_dispatcher = (procedure: LayeredReducer, layer: Layer<any>, handler: (b: any[], ...vs: any[]) => any) => {
+
+
+export const define_consolidator_per_layer_dispatcher = (procedure: LayeredReducer, layer: Layer<any>, handler: (b: LayeredObject<any>[] | any[], ...vs: any[]) => any) => {
     const metadata = metadata_store.get(procedure)
     if (metadata) {
         define_layered_procedure_handler(metadata, layer, handler)

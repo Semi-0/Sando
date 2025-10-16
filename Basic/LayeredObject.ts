@@ -26,7 +26,14 @@ export interface LayeredObject<T> {
     summarize_self(): string[]; 
     describe_self(): string;
 }
-
+export const is_layered_object = register_predicate("is_layered_object", (a: any): a is LayeredObject<any> => {
+    return a !== undefined && a !== null &&
+     a.alist !== undefined && a.alist !== null &&
+      a.has_layer !== undefined && a.get_layer_value !== undefined && 
+      a.annotation_layers !== undefined && 
+      a.summarize_self !== undefined && 
+      a.describe_self !== undefined
+})
 export const is_pair = register_predicate("is_pair", (a: any): a is [any, any] => {
     return is_array(a) && a.length === 2
 })
@@ -123,9 +130,7 @@ export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<
     return is_layered_object(obj) ? obj.annotation_layers() : construct_empty_layers_set()
 }
 
-export const is_layered_object = register_predicate("is_layered_object", (a: any): a is LayeredObject<any> => {
-    return is_bundled_obj("layered_object")(a)
-})
+
 
 define_generic_procedure_handler(to_string, match_args(is_layered_object), (obj: LayeredObject<any>): string => {
      return (map_to_array(obj.annotation_layers(), (layer: Layer<any>) => {

@@ -28,9 +28,5 @@ export const layered_deep_equal = (a: LayeredObject<any>, b: LayeredObject<any>)
                                                                                               all_layers_value_equal(a, b)
 
 
-define_generic_procedure_handler(is_equal, all_match(is_better_set), (a: any, b: any) => {
-    // this can be even more generic
-    return every(a, (value: any) => some(b, (value2: any) => is_equal(value, value2)))
-})
-
+// Only register handler for layered objects to avoid infinite recursion
 define_generic_procedure_handler(is_equal, all_match(is_layered_object), layered_deep_equal)
