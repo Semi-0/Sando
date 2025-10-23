@@ -135,3 +135,4 @@ const result = multi_consolidator(multiLayerObject);
 - The consolidator automatically manages layer iteration via `layers_reduce`
 - Layer dispatch handlers receive `(base_args, ...vs)` where `vs` are layer-specific values
 - The reducer function is called for each layer pair `[layer, value]`
+

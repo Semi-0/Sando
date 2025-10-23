@@ -3,7 +3,10 @@ import { layers_reduce } from "./helper"
 import { is_base_layer, type Layer } from "./Layer"
 import type { LayeredObject } from "./LayeredObject"
 import { define_layered_procedure_handler, make_layered_procedure } from "./LayeredProcedure"
-
+import { pipe } from "fp-ts/lib/function"
+import { flat_map, to_array } from "generic-handler/built_in_generics/generic_collection"
+import { construct_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_layered_datum } from "./LayeredDatum"
 
 // layered reducer is a reducer that reduce an layered object into a single value
 // maybe we should stored the metadata? 
@@ -49,4 +52,15 @@ export const define_consolidator_per_layer_dispatcher = (procedure: LayeredReduc
     else {
         throw new Error("define_reducer_per_layer_dispatcher: procedure not found")
     }
+}
+
+
+
+
+export const push_layer = (object: LayeredObject<any>, layer: Layer<any>, value: any) => {
+  return object.update_layer(layer, value)
+}
+
+export const pop_layer = (object: LayeredObject<any>, layer: Layer<any>) => {
+  return object.remove_layer(layer)
 }

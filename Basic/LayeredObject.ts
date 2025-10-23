@@ -12,9 +12,10 @@ import { map_to_array } from "../utility";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
-import { add_item, filter, find, first, has, length, map, every } from "generic-handler/built_in_generics/generic_collection";
+import { add_item, filter, find, first, has, length, map, every, remove_item } from "generic-handler/built_in_generics/generic_collection";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+
 
 
 
@@ -23,6 +24,8 @@ export interface LayeredObject<T> {
     has_layer(layer: Layer<any>): boolean;
     get_layer_value(layer: Layer<any>): any | undefined;
     annotation_layers(): BetterSet<Layer<any>>;
+    update_layer(layer: Layer<any>, value: any): LayeredObject<T>;
+    remove_layer(layer: Layer<any>): LayeredObject<T>;
     summarize_self(): string[]; 
     describe_self(): string;
 }
@@ -96,6 +99,10 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
         return construct_layered_object(base_value, add_item(alist, [layer, value]))
     }
 
+    function remove_layer(layer: Layer<any>): LayeredObject<T>{
+        return construct_layered_object(base_value, remove_item(alist, [layer, undefined]))
+    }
+
     function annotation_layers(): BetterSet<Layer<any>> {
         return map(alist, first)
     }
@@ -121,7 +128,8 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
         get_layer_value,
         annotation_layers,
         summarize_self,
-        describe_self 
+        describe_self,
+        remove_layer
     }
     return self
 }
@@ -134,7 +142,7 @@ export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<
 
 define_generic_procedure_handler(to_string, match_args(is_layered_object), (obj: LayeredObject<any>): string => {
      return (map_to_array(obj.annotation_layers(), (layer: Layer<any>) => {
-         return layer.get_name() + " layer: " + to_string(layer.get_value(obj))
+         return layer.get_name() + " layer " + to_string(layer.get_value(obj))
      }) as string[]).join("\n") 
 })
 
