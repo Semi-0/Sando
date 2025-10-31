@@ -34,6 +34,8 @@ export const is_layered_object = register_predicate("is_layered_object", (a: any
      a.alist !== undefined && a.alist !== null &&
       a.has_layer !== undefined && a.get_layer_value !== undefined && 
       a.annotation_layers !== undefined && 
+      a.update_layer !== undefined &&
+      a.remove_layer !== undefined &&
       a.summarize_self !== undefined && 
       a.describe_self !== undefined
 })
@@ -108,20 +110,39 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
     }
 
     function summarize_self(): string[]{
-        return [to_string(base_value)]
+        const layers = map_to_array(annotation_layers(), (layer: Layer<any>) => layer) as Layer<any>[];
+
+        const lines = layers
+            .map((layer: Layer<any>) => {
+                const label = is_base_layer(layer) ? "base" : layer.get_name();
+                const value = layer.get_value(self);
+                const rendered = to_string(value);
+                return `${label}: ${rendered}`;
+            });
+
+        return lines.length > 0 ? lines : ["<no layers>"];
     } 
 
     function describe_self(): string{
-        const base_layer_description = get_layer_value(base_layer())
-        //@ts-ignore
-   
-        return [base_layer_description, ...map_to_array(annotation_layers(), (layer: Layer) => {
-            return layer.get_name() + " layer: " + to_string(layer.get_value(self))
-        })].join("\n") 
+        const layers = map_to_array(annotation_layers(), (layer: Layer<any>) => layer) as Layer<any>[];
+        const formated_layers = [base_layer(), ...layers.filter(l => l.get_name() !== "base")]
+
+        const annotations = formated_layers.map((layer: Layer<any>, index: number) => {
+            const label = is_base_layer(layer) ? "base" : layer.get_name();
+            const value = layer.get_value(self);
+            const valueLines = to_string(value).split("\n");
+            const header = `  [${index}] ${label}`;
+            const body = valueLines.map((line: string) => `    ${line}`).join("\n");
+            return body ? `${header}\n${body}` : header;
+        });
+
+        return [
+            "===layered object===",
+            ...annotations
+        ].join("\n");
     }
 
-    const self = {
-        identifier: "layered_object",
+    const self: LayeredObject<T> = {
         alist,
         has_layer,
         update_layer,
@@ -131,7 +152,7 @@ export function construct_layered_object<T>(base_value: T, _alist: BetterSet<any
         describe_self,
         remove_layer
     }
-    return self
+    return self as LayeredObject<T>
 }
 
 export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<any>> => {
@@ -141,9 +162,8 @@ export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<
 
 
 define_generic_procedure_handler(to_string, match_args(is_layered_object), (obj: LayeredObject<any>): string => {
-     return (map_to_array(obj.annotation_layers(), (layer: Layer<any>) => {
-         return layer.get_name() + " layer " + to_string(layer.get_value(obj))
-     }) as string[]).join("\n") 
+
+    return obj.describe_self()
 })
 
 
