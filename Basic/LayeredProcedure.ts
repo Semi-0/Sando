@@ -120,6 +120,8 @@ function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...ar
         const base_value = base_procedure(...map(args, get_base_value))
         const annotation_layers : BetterSet<Layer<any>> =  merge_annotation_layers(...args)
 
+        // a better way is not passing per data but per layered object
+        // so original base value can still be deal with
         return construct_layered_object<T>(
             base_value,
 
