@@ -29,6 +29,7 @@ export interface LayeredObject<T> {
     summarize_self(): string[]; 
     describe_self(): string;
 }
+
 export const is_layered_object = register_predicate("is_layered_object", (a: any): a is LayeredObject<any> => {
     return a !== undefined && a !== null &&
      a.alist !== undefined && a.alist !== null &&
