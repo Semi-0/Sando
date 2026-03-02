@@ -19,14 +19,15 @@ export interface LayeredProcedureMetadata {
     handlers: Map<string, (b: any, ...v: any) => any>;
     get_name(): string;
     get_base_procedure(): (...args: any) => any;
-    set_handler(name: string, handler: (b: any, ...v: any) => any): void;
-    get_handler(layer: Layer<any>): ((b: any, ...v: any) => any) ;
+    set_handler(name: string, handler: (...args: any[]) => any): void;
+    get_handler(layer: Layer<any>): ((...args: any[]) => any) ;
 }
 
 export const is_layered_procedure_metadata = register_predicate("is_layered_procedure_metadata", (a: any): a is LayeredProcedureMetadata => {
     return is_bundled_obj("layered_procedure_metadata")(a);
 });
 
+const deprecated_layered_procedure_store = new Set<(...args: any[]) => any>()
 
 
 export function construct_layered_procedure_metadata(name: string, arity: number, base_proc: (...args: any) => any): LayeredProcedureMetadata {
@@ -86,6 +87,8 @@ function get_layered_procedure_metadata(proc: (...args: any) => any): LayeredPro
 }
 
 
+const new_layered_procedure_store = new Set<(...args: any[]) => any>()
+
 
 //  v should not be layered specific value this is an design error but now it takes too many effort to fix it
 export function define_layered_procedure_handler(procedure: (...args: any) => any, layer: any, handler: (b: any, ...v: any) => any){
@@ -100,6 +103,16 @@ export function define_layered_procedure_handler(procedure: (...args: any) => an
     }
 }
 
+export function extend_layered_procedure(procedure: (...args: any) => any, layer: string, handler: (b: any, ...v: any) => any){
+    const metadata = get_layered_procedure_metadata(procedure)
+    if (metadata){
+        new_layered_procedure_store.add(handler)
+        metadata.set_handler(layer, handler)
+    }
+    else{
+        throw new Error(`extend_layered_procedure: procedure = ${procedure} not found`)
+    }
+}
 
 
 function _define_layered_procedure_handler(procedure: (...args: any) => any, layer: string, handler: (b: any, ...v: any) => any){
@@ -115,6 +128,8 @@ function _define_layered_procedure_handler(procedure: (...args: any) => any, lay
 export const merge_annotation_layers = (...args: LayeredObject<any>[]) => reduce(args.map(get_annotation_layers), layers_set_merge, construct_empty_layers_set())
  
 
+
+
 function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...args: any[]) {
         const base_procedure = metaData.get_base_procedure();
         const base_value = base_procedure(...map(args, get_base_value))
@@ -129,7 +144,13 @@ function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...ar
                 (s: BetterSet<Layer<any>>) => filter(s, (l: Layer<any>) => l.get_name() !== "base"),
                 (s: BetterSet<Layer<any>>) => map(s, (layer: Layer<any>): [Layer<any>, any] => {
                     const handler = metaData.get_handler(layer); 
-                    return [layer, handler(base_value, ...args.map(a => layer.get_value(a)))];
+                    if (new_layered_procedure_store.has(handler)) {
+                        return [layer, handler(base_value, ...args)];
+                    }
+                    else {
+                        console.error("this layered procedure handler is about to be deprecated, please use extend_layered_procedure instead")
+                        return [layer, handler(base_value, ...args.map(a => layer.get_value(a)))];
+                    }
                 }, get_alist_pair_name))
             )
  };

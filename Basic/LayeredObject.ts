@@ -177,7 +177,6 @@ export const get_annotation_layers = (obj: LayeredObject<any>): BetterSet<Layer<
 
 
 define_generic_procedure_handler(to_string, match_args(is_layered_object), (obj: LayeredObject<any>): string => {
-
     return obj.describe_self()
 })
 
