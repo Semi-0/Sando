@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (c) 2024–2026 semi-0
+//
+// This file was written by semi-0.
+
 import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 
 import {  base_layer, construct_empty_layers_set, get_base_value, get_layer_name, is_layer, layers_set_merge, type Layer } from "./Layer"
@@ -103,11 +109,11 @@ export function define_layered_procedure_handler(procedure: (...args: any) => an
     }
 }
 
-export function extend_layered_procedure(procedure: (...args: any) => any, layer: string, handler: (b: any, ...v: any) => any){
+export function extend_layered_procedure(procedure: (base: any, ...args: LayeredObject<any>[]) => any, layer: Layer<any>, handler: (b: any, ...v: any) => any){
     const metadata = get_layered_procedure_metadata(procedure)
     if (metadata){
         new_layered_procedure_store.add(handler)
-        metadata.set_handler(layer, handler)
+        metadata.set_handler(layer.get_name(), handler)
     }
     else{
         throw new Error(`extend_layered_procedure: procedure = ${procedure} not found`)
