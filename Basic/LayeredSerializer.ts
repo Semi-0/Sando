@@ -101,6 +101,15 @@ define_generic_procedure_handler(deserialize_per_layer, match_args(is_base_layer
     }
 })
 
+export const base_serializer = construct_simple_generic_procedure("base_serializer", 1, (value: any) => {
+    return value
+})
+
+define_generic_procedure_handler(serialize_layer_value, match_args(is_base_layer_string, is_any), (name: string, value: any) => {
+   return base_serializer(value)
+})
+
+
 /** True if value appears to be a serialized LayeredObject (has "base" key). */
 export function is_serialized_layered_object(value: unknown): value is Record<string, unknown> {
    return (
