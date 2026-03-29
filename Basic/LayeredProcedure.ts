@@ -33,7 +33,6 @@ export const is_layered_procedure_metadata = register_predicate("is_layered_proc
     return is_bundled_obj("layered_procedure_metadata")(a);
 });
 
-const deprecated_layered_procedure_store = new Set<(...args: any[]) => any>()
 
 
 export function construct_layered_procedure_metadata(name: string, arity: number, base_proc: (...args: any) => any): LayeredProcedureMetadata {
@@ -95,6 +94,12 @@ function get_layered_procedure_metadata(proc: (...args: any) => any): LayeredPro
 
 const new_layered_procedure_store = new Set<(...args: any[]) => any>()
 
+export const internal_mark_migrated_layered_procedure_handler = (handler: (...args: any) => any) => {
+    // this is an ugly hack 
+    // but let's keep it for now 
+    // until we sure that most layered procedure are migrated to the new api
+    new_layered_procedure_store.add(handler)
+}
 
 //  v should not be layered specific value this is an design error but now it takes too many effort to fix it
 export function define_layered_procedure_handler(procedure: (...args: any) => any, layer: any, handler: (b: any, ...v: any) => any){
@@ -112,7 +117,7 @@ export function define_layered_procedure_handler(procedure: (...args: any) => an
 export function extend_layered_procedure(procedure: (base: any, ...args: LayeredObject<any>[]) => any, layer: Layer<any>, handler: (b: any, ...v: any) => any){
     const metadata = get_layered_procedure_metadata(procedure)
     if (metadata){
-        new_layered_procedure_store.add(handler)
+        internal_mark_migrated_layered_procedure_handler(handler)
         metadata.set_handler(layer.get_name(), handler)
     }
     else{
@@ -155,6 +160,8 @@ function layered_procedure_dispatch<T>(metaData: LayeredProcedureMetadata, ...ar
                     }
                     else {
                         console.error("this layered procedure handler is about to be deprecated, please use extend_layered_procedure instead")
+                        console.error("layer name: " + layer.get_name())
+                        console.error("handler name: " + handler.name)
                         return [layer, handler(base_value, ...args.map(a => layer.get_value(a)))];
                     }
                 }, get_alist_pair_name))

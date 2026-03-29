@@ -4,6 +4,7 @@ import { type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, register_predicate } from "generic-handler/Predicates";
 import { timestamp_to_ordinary_time } from "../utility";
+import { internal_mark_migrated_layered_procedure_handler } from "../Basic/LayeredProcedure";
 import { construct_layered_datum } from "../Basic/LayeredDatum";
 
 export type TimeStampedValue = number;
@@ -26,8 +27,14 @@ export const time_layer = make_annotation_layer("time", (get_name: () => string,
         return 0;
     }
 
-    function get_procedure(name: string, arity: number): any | undefined {
-        return default_merge_procedure(merge_timestamped_value, get_default_value());
+    function get_procedure(_name: string, _arity: number): any | undefined {
+        const mergeProc = default_merge_procedure(merge_timestamped_value, get_default_value());
+        const wrapper = (base_value: any, ...args: LayeredObject<any>[]) => {
+            const values = args.map((a) => get_value(a));
+            return mergeProc(base_value, ...values);
+        };
+        internal_mark_migrated_layered_procedure_handler(wrapper);
+        return wrapper;
     }
 
 

@@ -272,8 +272,8 @@ describe('test multiple layers', () => {
   });
 
   it('should handle time layer correctly', () => {
-    expect(get_time_layer_value(obj).timestamp).toBe(1000);
-    expect(get_time_layer_value(obj2).timestamp).toBe(2000);
+    expect(get_time_layer_value(obj)).toBe(1000);
+    expect(get_time_layer_value(obj2)).toBe(2000);
   });
 
 
@@ -289,7 +289,7 @@ describe('test multiple layers', () => {
     expect(get_base_value(result)).toBe(3);
     expect(to_array(get_support_layer_value(result)).sort()).toEqual(["support", "support2"]);
     expect(get_error_layer_value(result).map((e: any) => e.get_error())).toEqual(["error", "error2"]);
-    expect(get_time_layer_value(result).timestamp).toBe(2000);
+    expect(get_time_layer_value(result)).toBe(2000);
     expect(get_log_layer_value(result).map((l: any) => l.get_message())).toEqual(["log", "log2"]);
   });
 });

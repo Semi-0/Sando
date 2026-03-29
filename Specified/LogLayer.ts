@@ -6,6 +6,7 @@ import { type LayeredObject } from "../Basic/LayeredObject";
 import { default_merge_procedure } from "../Basic/LayerGenerics";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
+import { internal_mark_migrated_layered_procedure_handler } from "../Basic/LayeredProcedure";
 import { timestamp_to_ordinary_time } from "../utility";
 import { construct_layered_datum } from "../Basic/LayeredDatum";
 
@@ -64,8 +65,14 @@ export const log_layer = make_annotation_layer("log", (get_name: () => string,
         return []
     }
 
-    function get_procedure(name: string, arity: number): any | undefined {
-       return default_merge_procedure(merge_log_entry, [])
+    function get_procedure(_name: string, _arity: number): any | undefined {
+        const mergeProc = default_merge_procedure(merge_log_entry, []);
+        const wrapper = (base_value: any, ...args: LayeredObject<any>[]) => {
+            const values = args.map((a) => get_value(a));
+            return mergeProc(base_value, ...values);
+        };
+        internal_mark_migrated_layered_procedure_handler(wrapper);
+        return wrapper;
     }
 
 

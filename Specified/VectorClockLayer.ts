@@ -11,6 +11,8 @@ import {
     deserialize_per_layer,
     serialize_layer_value,
 } from "../Basic/LayeredSerializer"
+import type { LayeredObject } from "../Basic"
+import { internal_mark_migrated_layered_procedure_handler } from "../Basic/LayeredProcedure"
 
 const VECTOR_CLOCK_LAYER_NAME = "vector_clock"
 
@@ -68,12 +70,18 @@ export const vector_clock_layer: Layer<VectorClock> = make_annotation_layer<Vect
       has_value,
       get_value,
       get_default_value: () => new Map(),
-      get_procedure: (_name: string, _arity: number) =>
-         (_base: VectorClock, ...values: VectorClock[]) =>
-            values.reduce<VectorClockOrConstant>(
+      get_procedure: (_name: string, _arity: number) => {
+
+         const procedure = (_base: VectorClock, ...values: LayeredObject<any>[]) =>
+           values.map(get_value).reduce<VectorClockOrConstant>(
                (acc, v) => version_vector_merge(acc, v),
                new Map() as VectorClockOrConstant
-            ),
+         )
+
+         internal_mark_migrated_layered_procedure_handler(procedure)
+
+         return procedure;
+      },
       summarize_self,
    })
 )

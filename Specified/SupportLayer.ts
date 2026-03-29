@@ -9,6 +9,7 @@
 import {  type BetterSet, construct_better_set, set_merge } from "generic-handler/built_in_generics/generic_better_set"
 import { layer_accessor, make_annotation_layer, type Layer } from "../Basic/Layer"
 import { default_merge_procedure } from "../Basic/LayerGenerics"
+import { internal_mark_migrated_layered_procedure_handler } from "../Basic/LayeredProcedure"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import {  type LayeredObject } from "../Basic/LayeredObject"
 import { map_to_array } from "../utility"
@@ -22,8 +23,14 @@ export const support_layer = make_annotation_layer("support", (get_name: () => s
         return construct_better_set([])
     } 
 
-    function get_procedure(name: string, arity: number): any | undefined{
-        return default_merge_procedure(set_merge, empry_support_set())
+    function get_procedure(_name: string, _arity: number): any | undefined {
+        const mergeProc = default_merge_procedure(set_merge, empry_support_set());
+        const wrapper = (base_value: any, ...args: LayeredObject<any>[]) => {
+            const values = args.map((a) => get_value(a));
+            return mergeProc(base_value, ...values);
+        };
+        internal_mark_migrated_layered_procedure_handler(wrapper);
+        return wrapper;
     }
   
     return {
